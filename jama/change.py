@@ -1,9 +1,14 @@
+from difflib import SequenceMatcher
 from typing import Union
 
 from attr import dataclass
 
 
-@dataclass
+def get_diff(a, b):
+    return SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes()
+
+
+@dataclass(slots=True)
 class File:
     graph: list[Union[int, tuple[int]]]
     max_uid: int
@@ -15,7 +20,7 @@ class File:
     def __len__(self):
         return len(self.graph)
 
-    def add(self, offset, size):
+    def insert(self, offset, size):
         if offset < 0 or offset > len(self):
             raise IndexError()
         graph = self.graph
@@ -28,3 +33,10 @@ class File:
     def delete(self, offset, size):
         graph = self.graph
         return File(graph[:offset] + graph[offset + size :], self.max_uid)
+
+
+@dataclass(slots=True)
+class Change:
+    @classmethod
+    def from_diff(cls, a: File, b: File):
+        return get_diff(a.graph, b.graph)
