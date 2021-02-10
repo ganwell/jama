@@ -1,5 +1,5 @@
 from difflib import SequenceMatcher
-from typing import Union
+from typing import Literal, Optional, Union
 
 from attr import dataclass
 
@@ -10,7 +10,7 @@ def get_diff(a, b):
 
 @dataclass(slots=True)
 class File:
-    graph: list[Union[int, tuple[int]]]
+    graph: list[int]
     max_uid: int
 
     @classmethod
@@ -36,7 +36,25 @@ class File:
 
 
 @dataclass(slots=True)
-class Change:
+class Change(object):
     @classmethod
     def from_diff(cls, a: File, b: File):
-        return get_diff(a.graph, b.graph)
+        ag = a.graph
+        bg = b.graph
+        for ct, l, m, x, y in get_diff(ag, bg):
+            if ct == "insert":
+                pre = None
+                if l:
+                    pre = l
+                yield Insert(pre, bg[x:y])
+
+
+@dataclass(slots=True)
+class Insert(Change):
+    predecessor: Optional[int]
+    lines: list[int]
+
+
+@dataclass(slots=True)
+class Delete(Change):
+    line: int

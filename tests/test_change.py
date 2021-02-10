@@ -1,7 +1,7 @@
 import pytest
 from hypothesis import given, strategies as st
 
-from jama.change import Change, File
+from jama.change import Change, File, Insert
 
 
 def cap(x):
@@ -40,8 +40,8 @@ def test_diff():
     b = a.insert(0, 1)
     assert b.graph == [3, 0, 1, 2]
     assert len(b) == 4
-    c = Change.from_diff(a, b)
-    # assert c == 1
+    c = list(Change.from_diff(a, b))
+    assert c == [Insert(None, [3])]
 
 
 def test_add():
