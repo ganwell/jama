@@ -1,0 +1,9 @@
+#!/bin/sh
+
+find . -name "*.py" | entr sh -c "
+    set -e
+    pytest tests
+    dmypy run -- jama tests
+    flake8 jama tests
+    ag TODO jama tests
+"

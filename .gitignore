@@ -1,0 +1,7 @@
+/build/
+/jama.egg-info/
+__pycache__
+/dist
+*.pyc
+/.hypothesis/
+/.dmypy.json
