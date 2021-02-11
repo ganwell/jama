@@ -1,7 +1,7 @@
 import pytest
 from hypothesis import given, strategies as st
 
-from jama.change import Change, FileMock, Insert
+from jama.change import Change, Delete, FileMock, Insert
 
 
 def cap(x):
@@ -35,21 +35,42 @@ change = st.one_of(insert, delete)
 #         files.append(cur)
 
 
-def test_diff():
+def test_diff_add():
     a = FileMock.from_size(3)
     b = a.insert(0, 1)
     assert b.graph == [3, 0, 1, 2]
     assert len(b) == 4
     c = list(Change.from_diff(a, b))
-    assert c == [Insert(None, [3])]
+    assert c == [Insert(None, [3], 0)]
     b = a.insert(1, 1)
     assert b.graph == [0, 3, 1, 2]
     c = list(Change.from_diff(a, b))
-    assert c == [Insert(0, [3])]
+    assert c == [Insert(0, [3], 1)]
     b = a.insert(2, 2)
     assert b.graph == [0, 1, 3, 4, 2]
     c = list(Change.from_diff(a, b))
-    assert c == [Insert(1, [3, 4])]
+    assert c == [Insert(1, [3, 4], 2)]
+    b = a.insert(3, 2)
+    assert b.graph == [0, 1, 2, 3, 4]
+    c = list(Change.from_diff(a, b))
+    assert c == [Insert(2, [3, 4], None)]
+
+
+def test_diff_del():
+    a = FileMock.from_size(3)
+    assert a.graph == [0, 1, 2]
+    b = a.delete(0, 1)
+    assert b.graph == [1, 2]
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(0)]
+    b = a.delete(1, 1)
+    assert b.graph == [0, 2]
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(1)]
+    b = a.delete(1, 2)
+    assert b.graph == [0]
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(1), Delete(2)]
 
 
 def test_add():

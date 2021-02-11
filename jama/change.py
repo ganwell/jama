@@ -1,5 +1,5 @@
 from difflib import SequenceMatcher
-from typing import Optional
+from typing import Any, Optional
 
 from attr import dataclass
 
@@ -10,7 +10,6 @@ def get_diff(a, b):
 
 @dataclass(slots=True)
 class File(object):
-    # TODO: should be list[Union[int, tuple[int]]], tuple[int] means it is conflicting
     graph: list[int]
 
 
@@ -40,6 +39,23 @@ class FileMock(File):
         return FileMock(graph[:offset] + graph[offset + size :], self.max_uid)
 
 
+# TODO use this when it is supported
+# DAG = Union[tuple[int, bool], list["DAG"]]
+DAG = Any
+
+
+@dataclass(slots=True)
+class State(object):
+    graph: list[DAG]
+
+    @classmethod
+    def from_file(cls, file_: File):
+        raise NotImplementedError()
+
+    def has_conflict(self) -> bool:
+        raise NotImplementedError()
+
+
 @dataclass(slots=True)
 class Change(object):
     @classmethod
@@ -49,15 +65,22 @@ class Change(object):
         for ct, l, m, x, y in get_diff(ag, bg):
             if ct == "insert":
                 pre = None
+                suc = None
                 if l:
                     pre = ag[l - 1]
-                yield Insert(pre, bg[x:y])
+                if l != len(ag):
+                    suc = ag[l]
+                yield Insert(pre, bg[x:y], suc)
+            elif ct == "delete":
+                for line in ag[l:m]:
+                    yield Delete(line)
 
 
 @dataclass(slots=True)
 class Insert(Change):
     predecessor: Optional[int]
     lines: list[int]
+    successor: Optional[int]
 
 
 @dataclass(slots=True)
