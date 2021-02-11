@@ -52,7 +52,7 @@ class FileEdit(File):
 
 # TODO use this when it is supported
 # DAG = Union[tuple[int, bool], PVector["DAG"]]
-DAG = Any
+DAG = PVector[Any]
 
 
 @dataclass(slots=True)
@@ -69,41 +69,63 @@ class State(object):
 
 @dataclass(slots=True)
 class Change(object):
+    def apply(self, state: State) -> State:
+        raise NotImplementedError()
+
+    @classmethod
+    def pre_suc(_, ag, left, right):
+        pre = None
+        suc = None
+        if left:
+            pre = ag[left - 1]
+        if right != len(ag):
+            suc = ag[right]
+        return pre, suc
+
     @classmethod
     def from_diff(cls, a: File, b: File):
-        ag = a.graph
-        bg = b.graph
-        for ct, l, m, x, y in get_diff(ag, bg):
+        a_graph = a.graph
+        b_graph = b.graph
+        for ct, a_left, a_right, b_left, b_right in get_diff(a_graph, b_graph):
             if ct == "insert":
-                pre = None
-                suc = None
-                if l:
-                    pre = ag[l - 1]
-                if l != len(ag):
-                    suc = ag[l]
-                yield Insert(pre, bg[x:y], suc)
+                pre, suc = cls.pre_suc(a_graph, a_left, a_left)
+                yield Insert(pre, b_graph[b_left:b_right], suc)
             elif ct == "delete":
-                for line in ag[l:m]:
+                for line in a_graph[a_left:a_right]:
                     yield Delete(line)
             elif ct == "replace":
-                for line in ag[l:m]:
+                for line in a_graph[a_left:a_right]:
                     yield Delete(line)
-                pre = None
-                suc = None
-                if l:
-                    pre = ag[l - 1]
-                if m != len(ag):
-                    suc = ag[m]
-                yield Insert(pre, bg[x:y], suc)
+                pre, suc = cls.pre_suc(a_graph, a_left, a_right)
+                yield Insert(pre, b_graph[b_left:b_right], suc)
 
 
 @dataclass(slots=True)
 class Insert(Change):
     predecessor: Optional[int]
-    lines: list[int]
+    lines: PVector[int]
     successor: Optional[int]
 
 
 @dataclass(slots=True)
 class Delete(Change):
     line: int
+
+    def delete(self, graph: DAG, line: int, count: int):
+        for i, item in enumerate(graph):
+            if isinstance(item, list):
+                count += self.delete(graph, line, count)
+            elif isinstance(item, tuple):
+                if item[0] == line:
+                    graph = graph.set(i, (line, False))
+                    count += 1
+            else:
+                raise InconsistentError()
+        return graph, count
+
+    def apply(self, state: State) -> State:
+        graph = state.graph
+        graph, count = self.delete(graph, self.line, 0)
+        if count > 1:
+            raise InconsistentError()
+        return State(graph)

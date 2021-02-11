@@ -41,6 +41,15 @@ def test_state_from_file():
     assert b.graph == [(0, True), (1, True)]
 
 
+def test_delete_apply():
+    a = File.from_iterable([0, 1, 2])
+    b = State.from_file(a)
+    assert b.graph == [(0, True), (1, True), (2, True)]
+    c = Delete(1)
+    d = c.apply(b)
+    assert d.graph == [(0, True), (1, False), (2, True)]
+
+
 def test_diff_add():
     a = FileEdit.from_size(3)
     b = a.insert(0, 1)
