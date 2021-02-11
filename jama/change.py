@@ -74,6 +74,16 @@ class Change(object):
             elif ct == "delete":
                 for line in ag[l:m]:
                     yield Delete(line)
+            elif ct == "replace":
+                for line in ag[l:m]:
+                    yield Delete(line)
+                pre = None
+                suc = None
+                if l:
+                    pre = ag[l - 1]
+                if m != len(ag):
+                    suc = ag[m]
+                yield Insert(pre, bg[x:y], suc)
 
 
 @dataclass(slots=True)

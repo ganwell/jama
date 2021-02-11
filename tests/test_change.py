@@ -1,7 +1,7 @@
 import pytest
 from hypothesis import given, strategies as st
 
-from jama.change import Change, Delete, FileMock, Insert
+from jama.change import Change, Delete, File, FileMock, Insert
 
 
 def cap(x):
@@ -71,6 +71,29 @@ def test_diff_del():
     assert b.graph == [0]
     c = list(Change.from_diff(a, b))
     assert c == [Delete(1), Delete(2)]
+
+
+def test_diff_repl():
+    a = File([0, 1, 2])
+    b = File([0, 3, 2])
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(1), Insert(0, [3], 2)]
+    a = File([0, 1, 2])
+    b = File([0, 1, 3])
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(2), Insert(1, [3], None)]
+    a = File([0, 1, 2])
+    b = File([3, 1, 2])
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(0), Insert(None, [3], 1)]
+    a = File([0, 1, 2])
+    b = File([0, 3, 4, 2])
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(1), Insert(0, [3, 4], 2)]
+    a = File([0, 1, 2])
+    b = File([0, 3])
+    c = list(Change.from_diff(a, b))
+    assert c == [Delete(1), Delete(2), Insert(0, [3], None)]
 
 
 def test_add():
