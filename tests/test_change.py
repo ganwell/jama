@@ -42,6 +42,14 @@ def test_diff():
     assert len(b) == 4
     c = list(Change.from_diff(a, b))
     assert c == [Insert(None, [3])]
+    b = a.insert(1, 1)
+    assert b.graph == [0, 3, 1, 2]
+    c = list(Change.from_diff(a, b))
+    assert c == [Insert(0, [3])]
+    b = a.insert(2, 2)
+    assert b.graph == [0, 1, 3, 4, 2]
+    c = list(Change.from_diff(a, b))
+    assert c == [Insert(1, [3, 4])]
 
 
 def test_add():

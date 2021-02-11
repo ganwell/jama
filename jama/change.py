@@ -1,5 +1,5 @@
 from difflib import SequenceMatcher
-from typing import Literal, Optional, Union
+from typing import Optional
 
 from attr import dataclass
 
@@ -45,7 +45,7 @@ class Change(object):
             if ct == "insert":
                 pre = None
                 if l:
-                    pre = l
+                    pre = ag[l - 1]
                 yield Insert(pre, bg[x:y])
 
 
