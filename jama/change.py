@@ -9,8 +9,13 @@ def get_diff(a, b):
 
 
 @dataclass(slots=True)
-class File:
+class File(object):
+    # TODO: should be list[Union[int, tuple[int]]], tuple[int] means it is conflicting
     graph: list[int]
+
+
+@dataclass(slots=True)
+class FileMock(File):
     max_uid: int
 
     @classmethod
@@ -26,13 +31,13 @@ class File:
         graph = self.graph
         uid = self.max_uid
         if size == 0:
-            return File(list(graph), uid)
+            return FileMock(list(graph), uid)
         graph = graph[:offset] + list(range(uid, uid + size)) + graph[offset:]
-        return File(graph, self.max_uid + size)
+        return FileMock(graph, self.max_uid + size)
 
     def delete(self, offset, size):
         graph = self.graph
-        return File(graph[:offset] + graph[offset + size :], self.max_uid)
+        return FileMock(graph[:offset] + graph[offset + size :], self.max_uid)
 
 
 @dataclass(slots=True)
