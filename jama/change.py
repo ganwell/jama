@@ -51,7 +51,7 @@ class FileEdit(File):
 
 
 # TODO use this when it is supported
-# DAG = Union[tuple[int, bool], PVector["DAG"]]
+# DAG = PVector[Union["DAG", tuple[int, bool]]]
 DAG = PVector[Any]
 
 
@@ -106,6 +106,13 @@ class Insert(Change):
     lines: PVector[int]
     successor: Optional[int]
 
+    def insert(self, graph: DAG, lines: PVector[int]):
+        pass
+
+    def apply(self, state: State) -> State:
+        graph, count = self.insert(state.graph, self.lines)
+        return State(graph)
+
 
 @dataclass(slots=True)
 class Delete(Change):
@@ -124,8 +131,7 @@ class Delete(Change):
         return graph, count
 
     def apply(self, state: State) -> State:
-        graph = state.graph
-        graph, count = self.delete(graph, self.line, 0)
+        graph, count = self.delete(state.graph, self.line, 0)
         if count > 1:
             raise InconsistentError()
         return State(graph)
