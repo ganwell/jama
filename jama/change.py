@@ -1,7 +1,14 @@
+from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any, Optional
 
 from attr import dataclass
+from pyrsistent import ny, pvector
+from pyrsistent.typing import PVector
+
+
+class InconsistentError(Exception):
+    pass
 
 
 def get_diff(a, b):
@@ -10,16 +17,20 @@ def get_diff(a, b):
 
 @dataclass(slots=True)
 class File(object):
-    graph: list[int]
+    graph: PVector[int]
+
+    @classmethod
+    def from_iterable(cls, iterable: Iterable):
+        return cls(pvector(iterable))
 
 
 @dataclass(slots=True)
-class FileMock(File):
+class FileEdit(File):
     max_uid: int
 
     @classmethod
     def from_size(cls, size):
-        return cls(list(range(size)), size)
+        return cls(pvector(range(size)), size)
 
     def __len__(self):
         return len(self.graph)
@@ -30,27 +41,27 @@ class FileMock(File):
         graph = self.graph
         uid = self.max_uid
         if size == 0:
-            return FileMock(list(graph), uid)
+            return FileEdit(list(graph), uid)
         graph = graph[:offset] + list(range(uid, uid + size)) + graph[offset:]
-        return FileMock(graph, self.max_uid + size)
+        return FileEdit(graph, self.max_uid + size)
 
     def delete(self, offset, size):
         graph = self.graph
-        return FileMock(graph[:offset] + graph[offset + size :], self.max_uid)
+        return FileEdit(graph[:offset] + graph[offset + size :], self.max_uid)
 
 
 # TODO use this when it is supported
-# DAG = Union[tuple[int, bool], list["DAG"]]
+# DAG = Union[tuple[int, bool], PVector["DAG"]]
 DAG = Any
 
 
 @dataclass(slots=True)
 class State(object):
-    graph: list[DAG]
+    graph: PVector[DAG]
 
     @classmethod
     def from_file(cls, file_: File):
-        raise NotImplementedError()
+        return cls(file_.graph.transform([ny], lambda x: (x, True)))
 
     def has_conflict(self) -> bool:
         raise NotImplementedError()

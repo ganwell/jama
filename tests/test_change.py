@@ -1,7 +1,7 @@
 import pytest
 from hypothesis import given, strategies as st
 
-from jama.change import Change, Delete, File, FileMock, Insert
+from jama.change import Change, Delete, File, FileEdit, Insert, State
 
 
 def cap(x):
@@ -21,7 +21,7 @@ change = st.one_of(insert, delete)
 
 # @given(st.integers(0, max_len), st.lists(change))
 # def test_change(initial, changes):
-#     cur = FileMock.from_size(initial)
+#     cur = FileEdit.from_size(initial)
 #     for ct, pos, size in changes:
 #         if ct == "insert":
 #             cur = cur.insert(int(pos * len(cur)), size)
@@ -35,8 +35,14 @@ change = st.one_of(insert, delete)
 #         files.append(cur)
 
 
+def test_state_from_file():
+    a = FileEdit.from_size(2)
+    b = State.from_file(a)
+    assert b.graph == [(0, True), (1, True)]
+
+
 def test_diff_add():
-    a = FileMock.from_size(3)
+    a = FileEdit.from_size(3)
     b = a.insert(0, 1)
     assert b.graph == [3, 0, 1, 2]
     assert len(b) == 4
@@ -57,7 +63,7 @@ def test_diff_add():
 
 
 def test_diff_del():
-    a = FileMock.from_size(3)
+    a = FileEdit.from_size(3)
     assert a.graph == [0, 1, 2]
     b = a.delete(0, 1)
     assert b.graph == [1, 2]
@@ -97,7 +103,7 @@ def test_diff_repl():
 
 
 def test_add():
-    a = FileMock.from_size(3)
+    a = FileEdit.from_size(3)
     assert len(a) == 3
     assert a.graph == [0, 1, 2]
     b = a.insert(0, 0)
@@ -128,7 +134,7 @@ def test_add():
 
 
 def test_del():
-    a = FileMock.from_size(3)
+    a = FileEdit.from_size(3)
     assert a.graph == [0, 1, 2]
     b = a.delete(0, 0)
     assert b.graph == [0, 1, 2]
