@@ -74,21 +74,21 @@ def transform_into_file(graph: PVector[DAG]) -> PVector[int]:
 @dataclass(slots=True, frozen=True)
 class State(object):
     graph: PVector[DAG]
-    history: PSet[Change] = cast(
-        PSet["Change"], attr.ib(default=pset(), converter=pset)
-    )
-
-    graph = cast(PVector[DAG], attr.ib(converter=pvector))
+    history: PVector[Change] = cast(PVector["Change"], attr.ib(default=pvector()))
+    history_set: PSet[Change] = cast(PSet["Change"], attr.ib(default=pset()))
 
     @classmethod
     def from_file(cls, file_: FileRepr):
         return cls(transform_into_state(file_.graph))
 
+    def record(self, graph: PVector[DAG], change: Change):
+        return State(graph, self.history.append(change), self.history_set.add(change))
+
     def to_file(self) -> FileRepr:
         return FileRepr(transform_into_file(self.graph))
 
     def is_applied(self, change: Change):
-        return change in self.history
+        return change in self.history_set
 
     def has_conflict(self) -> bool:
         raise NotImplementedError()
@@ -167,7 +167,7 @@ class Insert(Change):
         graph, count = self.insert(state.graph, self.lines)
         if count != 1:
             raise InconsistentError()
-        return State(graph, state.history.add(self))
+        return state.record(graph, self)
 
 
 @dataclass(slots=True, frozen=True)
@@ -195,4 +195,4 @@ class Delete(Change):
         graph, count = self.delete(state.graph, self.line)
         if count != 1:
             raise InconsistentError()
-        return State(graph, state.history.add(self))
+        return state.record(graph, self)
