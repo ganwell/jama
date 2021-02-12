@@ -2,6 +2,7 @@ from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any, Optional
 
+import attr
 from attr import dataclass
 from pyrsistent import ny, pvector
 from pyrsistent.typing import PVector
@@ -15,16 +16,12 @@ def get_diff(a, b):
     return SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes()
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class File(object):
-    graph: PVector[int]
-
-    @classmethod
-    def from_iterable(cls, iterable: Iterable):
-        return cls(pvector(iterable))
+    graph: PVector[int] = attr.ib(converter=pvector)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class FileEdit(File):
     max_uid: int
 
@@ -55,19 +52,23 @@ class FileEdit(File):
 DAG = PVector[Any]
 
 
-@dataclass(slots=True)
+def transform_into_state(graph: PVector[int]) -> DAG:
+    return graph.transform([ny], lambda x: (x, True))
+
+
+@dataclass(slots=True, frozen=True)
 class State(object):
     graph: PVector[DAG]
 
     @classmethod
     def from_file(cls, file_: File):
-        return cls(file_.graph.transform([ny], lambda x: (x, True)))
+        return cls(transform_into_state(file_.graph))
 
     def has_conflict(self) -> bool:
         raise NotImplementedError()
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Change(object):
     def apply(self, state: State) -> State:
         raise NotImplementedError()
@@ -100,21 +101,39 @@ class Change(object):
                 yield Insert(pre, b_graph[b_left:b_right], suc)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Insert(Change):
     predecessor: Optional[int]
-    lines: PVector[int]
+    lines: Iterable[int] = attr.ib(converter=pvector)
     successor: Optional[int]
 
-    def insert(self, graph: DAG, lines: PVector[int]):
-        pass
+    def __attrs_post_init__(self):
+        assert len(self.lines) > 0
+        assert self.predecessor != self.successor
+
+    def insert(self, graph: DAG, lines: Iterable[int], count: int):
+        pre = None
+        suc = None
+        for i, item in enumerate(graph):
+            if item[0] == self.predecessor:
+                pre = i + 1
+            elif item[0] == self.successor:
+                suc = i
+        repl = graph[pre:suc]
+        new = transform_into_state(lines)
+        if not repl:
+            return graph[:pre] + new + graph[suc:], 1
+        else:
+            return graph[:pre] + [pvector([repl, new])] + graph[suc:], 1
 
     def apply(self, state: State) -> State:
-        graph, count = self.insert(state.graph, self.lines)
+        graph, count = self.insert(state.graph, self.lines, 0)
+        if count != 1:
+            raise InconsistentError()
         return State(graph)
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Delete(Change):
     line: int
 
@@ -132,6 +151,6 @@ class Delete(Change):
 
     def apply(self, state: State) -> State:
         graph, count = self.delete(state.graph, self.line, 0)
-        if count > 1:
+        if count != 1:
             raise InconsistentError()
         return State(graph)

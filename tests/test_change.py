@@ -42,12 +42,24 @@ def test_state_from_file():
 
 
 def test_delete_apply():
-    a = File.from_iterable([0, 1, 2])
+    a = File([0, 1, 2])
     b = State.from_file(a)
     assert b.graph == [(0, True), (1, True), (2, True)]
     c = Delete(1)
     d = c.apply(b)
     assert d.graph == [(0, True), (1, False), (2, True)]
+
+
+def test_basic_insert():
+    a = File([0, 1, 2])
+    b = State.from_file(a)
+    assert b.graph == [(0, True), (1, True), (2, True)]
+    c = Insert(1, [3], 2)
+    d = c.apply(b)
+    assert d.graph == [(0, True), (1, True), (3, True), (2, True)]
+    c = Insert(0, [3], 2)
+    d = c.apply(b)
+    assert d.graph == [(0, True), [[(1, True)], [(3, True)]], (2, True)]
 
 
 def test_diff_add():
