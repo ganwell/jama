@@ -145,6 +145,8 @@ class Insert(Change):
         lines = pvector(iterable)
         s_pre = self.predecessor
         s_suc = self.successor
+        pre = None
+        suc = None
         for i, item in enumerate(graph):
             if item[0] == s_pre:
                 pre = i + 1
@@ -154,6 +156,8 @@ class Insert(Change):
             pre = 0
         if s_suc is None:
             suc = len(graph)
+        if pre is None or suc is None:
+            return graph, 0
         repl = graph[pre:suc]
         new = transform_into_state(lines)
         if not repl:
