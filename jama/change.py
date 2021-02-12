@@ -167,6 +167,8 @@ class Insert(Change):
         if not repl:
             return graph[:pre] + new + graph[suc:], count + 1
         else:
+            # TODO: this creates a binary branch. maybe we could use a marker to find pure
+            # branching nodes and extend them instead of chaining binary branches.
             return (
                 graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:],
                 count + 1,
