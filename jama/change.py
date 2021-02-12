@@ -140,9 +140,8 @@ class Insert(Change):
         if not (self.predecessor is None and self.successor is None):
             assert self.predecessor != self.successor
 
-    def insert(self, graph: DAG, iterable: Iterable[int]):
+    def insert(self, graph: DAG, lines: PVector[DAG]):
         count = 1
-        lines = pvector(iterable)
         s_pre = self.predecessor
         s_suc = self.successor
         pre = None
