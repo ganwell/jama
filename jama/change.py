@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any, Optional, cast
@@ -5,8 +7,8 @@ from typing import Any, Optional, cast
 import attr
 import pyrsistent
 from attr import dataclass
-from pyrsistent import ny, pvector
-from pyrsistent.typing import PVector
+from pyrsistent import discard, ny, pset, pvector
+from pyrsistent.typing import PSet, PVector
 
 
 class InconsistentError(Exception):
@@ -18,14 +20,14 @@ def get_diff(a, b):
 
 
 @dataclass(slots=True, frozen=True)
-class File(object):
+class FileRepr(object):
     graph: PVector[int]
 
     graph = cast(PVector[int], attr.ib(converter=pvector))
 
 
 @dataclass(slots=True, frozen=True)
-class FileEdit(File):
+class FileReprEdit(FileRepr):
     max_uid: int
 
     @classmethod
@@ -41,13 +43,13 @@ class FileEdit(File):
         graph = self.graph
         uid = self.max_uid
         if size == 0:
-            return FileEdit(list(graph), uid)
+            return FileReprEdit(list(graph), uid)
         graph = graph[:offset] + list(range(uid, uid + size)) + graph[offset:]
-        return FileEdit(graph, self.max_uid + size)
+        return FileReprEdit(graph, self.max_uid + size)
 
     def delete(self, offset, size):
         graph = self.graph
-        return FileEdit(graph[:offset] + graph[offset + size :], self.max_uid)
+        return FileReprEdit(graph[:offset] + graph[offset + size :], self.max_uid)
 
 
 # TODO use this when it is supported
@@ -59,13 +61,34 @@ def transform_into_state(graph: PVector[int]) -> DAG:
     return graph.transform([ny], lambda x: (x, True))
 
 
+def transform_into_file(graph: PVector[DAG]) -> PVector[int]:
+    return cast(
+        PVector[int],
+        graph.transform([lambda i, v: not v[1]], discard).transform(
+            [ny], lambda x: x[0]
+        ),
+    )
+
+
+# State is something like CRDT
 @dataclass(slots=True, frozen=True)
 class State(object):
-    graph: PVector[DAG] = attr.ib(converter=pvector)
+    graph: PVector[DAG]
+    history: PSet[Change] = cast(
+        PSet["Change"], attr.ib(default=pset(), converter=pset)
+    )
+
+    graph = cast(PVector[DAG], attr.ib(converter=pvector))
 
     @classmethod
-    def from_file(cls, file_: File):
+    def from_file(cls, file_: FileRepr):
         return cls(transform_into_state(file_.graph))
+
+    def to_file(self) -> FileRepr:
+        return FileRepr(transform_into_file(self.graph))
+
+    def is_applied(self, change: Change):
+        return change in self.history
 
     def has_conflict(self) -> bool:
         raise NotImplementedError()
@@ -87,7 +110,7 @@ class Change(object):
         return pre, suc
 
     @classmethod
-    def from_diff(cls, a: File, b: File):
+    def from_diff(cls, a: FileRepr, b: FileRepr):
         a_graph = a.graph
         b_graph = b.graph
         for ct, a_left, a_right, b_left, b_right in get_diff(a_graph, b_graph):
@@ -114,10 +137,11 @@ class Insert(Change):
 
     def __attrs_post_init__(self):
         assert len(self.lines) > 0
-        assert self.predecessor != self.successor
+        if not (self.predecessor is None and self.successor is None):
+            assert self.predecessor != self.successor
 
     def insert(self, graph: DAG, iterable: Iterable[int]):
-        count = 0
+        count = 1
         lines = pvector(iterable)
         s_pre = self.predecessor
         s_suc = self.successor
@@ -129,19 +153,21 @@ class Insert(Change):
         if s_pre is None:
             pre = 0
         if s_suc is None:
-            suc = -1
+            suc = len(graph)
         repl = graph[pre:suc]
         new = transform_into_state(lines)
         if not repl:
-            return graph[:pre] + new + graph[suc:], 1
+            return graph[:pre] + new + graph[suc:], count
         else:
-            return graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:], 1
+            return graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:], count
 
     def apply(self, state: State) -> State:
+        if state.is_applied(self):
+            return state
         graph, count = self.insert(state.graph, self.lines)
         if count != 1:
             raise InconsistentError()
-        return State(graph)
+        return State(graph, state.history.add(self))
 
 
 @dataclass(slots=True, frozen=True)
@@ -164,7 +190,9 @@ class Delete(Change):
         return graph, count
 
     def apply(self, state: State) -> State:
+        if state.is_applied(self):
+            return state
         graph, count = self.delete(state.graph, self.line)
         if count != 1:
             raise InconsistentError()
-        return State(graph)
+        return State(graph, state.history.add(self))

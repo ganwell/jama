@@ -1,7 +1,7 @@
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import example, given, strategies as st
 
-from jama.change import Change, Delete, File, FileEdit, Insert, State
+from jama.change import Change, Delete, FileRepr, FileReprEdit, Insert, State
 
 
 def cap(x):
@@ -19,30 +19,39 @@ delete = st.tuples(st.just("delete"), over_range, over_range)
 change = st.one_of(insert, delete)
 
 
-# @given(st.integers(0, max_len), st.lists(change))
-# def test_change(initial, changes):
-#     cur = FileEdit.from_size(initial)
-#     for ct, pos, size in changes:
-#         if ct == "insert":
-#             cur = cur.insert(int(pos * len(cur)), size)
-#         elif ct == "delete":
-#             rest = 1.0 - pos
-#             len_cur = len(cur)
-#             to_delete = int(size * rest * len_cur)
-#             cur = cur.delete(int(pos * len_cur), to_delete)
-#         else:
-#             raise RuntimeError()
-#         files.append(cur)
+@given(st.integers(0, max_len), st.lists(change))
+@example(
+    initial=5,
+    changes=[("insert", 0.0, 10), ("delete", 0.0, 0.06666666666666686)],
+)
+def test_change(initial, changes):
+    cur = FileReprEdit.from_size(initial)
+    for ct, pos, size in changes:
+        prev = cur
+        if ct == "insert":
+            cur = cur.insert(int(pos * len(cur)), size)
+        elif ct == "delete":
+            rest = 1.0 - pos
+            len_cur = len(cur)
+            to_delete = int(size * rest * len_cur)
+            cur = cur.delete(int(pos * len_cur), to_delete)
+        else:
+            raise RuntimeError()
+        changes = Change.from_diff(prev, cur)
+        state = State.from_file(prev)
+        for change in changes:
+            state = change.apply(state)
+        assert state.to_file().graph == cur.graph
 
 
 def test_state_from_file():
-    a = FileEdit.from_size(2)
+    a = FileReprEdit.from_size(2)
     b = State.from_file(a)
     assert b.graph == [(0, True), (1, True)]
 
 
 def test_delete_apply():
-    a = File([0, 1, 2])
+    a = FileRepr([0, 1, 2])
     b = State.from_file(a)
     assert b.graph == [(0, True), (1, True), (2, True)]
     c = Delete(1)
@@ -51,19 +60,25 @@ def test_delete_apply():
 
 
 def test_basic_insert():
-    a = File([0, 1, 2])
+    a = FileRepr([0, 1, 2])
     b = State.from_file(a)
     assert b.graph == [(0, True), (1, True), (2, True)]
     c = Insert(1, [3], 2)
     d = c.apply(b)
     assert d.graph == [(0, True), (1, True), (3, True), (2, True)]
+    c = Insert(None, [3], 0)
+    d = c.apply(b)
+    assert d.graph == [(3, True), (0, True), (1, True), (2, True)]
+    c = Insert(2, [3], None)
+    d = c.apply(b)
+    assert d.graph == [(0, True), (1, True), (2, True), (3, True)]
     c = Insert(0, [3], 2)
     d = c.apply(b)
     assert d.graph == [(0, True), [[(1, True)], [(3, True)]], (2, True)]
 
 
 def test_complex_insert():
-    a = File([0, 1, 2])
+    a = FileRepr([0, 1, 2])
     b = State.from_file(a)
     c = Insert(None, [3], 2)
     d = c.apply(b)
@@ -71,7 +86,7 @@ def test_complex_insert():
 
 
 def test_complex_del():
-    a = File([0, 1, 2])
+    a = FileRepr([0, 1, 2])
     b = State.from_file(a)
     c = Insert(None, [3], 2)
     d = c.apply(b)
@@ -82,7 +97,7 @@ def test_complex_del():
 
 
 def test_diff_add():
-    a = FileEdit.from_size(3)
+    a = FileReprEdit.from_size(3)
     b = a.insert(0, 1)
     assert b.graph == [3, 0, 1, 2]
     assert len(b) == 4
@@ -103,7 +118,7 @@ def test_diff_add():
 
 
 def test_diff_del():
-    a = FileEdit.from_size(3)
+    a = FileReprEdit.from_size(3)
     assert a.graph == [0, 1, 2]
     b = a.delete(0, 1)
     assert b.graph == [1, 2]
@@ -120,30 +135,30 @@ def test_diff_del():
 
 
 def test_diff_repl():
-    a = File([0, 1, 2])
-    b = File([0, 3, 2])
+    a = FileRepr([0, 1, 2])
+    b = FileRepr([0, 3, 2])
     c = list(Change.from_diff(a, b))
     assert c == [Delete(1), Insert(0, [3], 2)]
-    a = File([0, 1, 2])
-    b = File([0, 1, 3])
+    a = FileRepr([0, 1, 2])
+    b = FileRepr([0, 1, 3])
     c = list(Change.from_diff(a, b))
     assert c == [Delete(2), Insert(1, [3], None)]
-    a = File([0, 1, 2])
-    b = File([3, 1, 2])
+    a = FileRepr([0, 1, 2])
+    b = FileRepr([3, 1, 2])
     c = list(Change.from_diff(a, b))
     assert c == [Delete(0), Insert(None, [3], 1)]
-    a = File([0, 1, 2])
-    b = File([0, 3, 4, 2])
+    a = FileRepr([0, 1, 2])
+    b = FileRepr([0, 3, 4, 2])
     c = list(Change.from_diff(a, b))
     assert c == [Delete(1), Insert(0, [3, 4], 2)]
-    a = File([0, 1, 2])
-    b = File([0, 3])
+    a = FileRepr([0, 1, 2])
+    b = FileRepr([0, 3])
     c = list(Change.from_diff(a, b))
     assert c == [Delete(1), Delete(2), Insert(0, [3], None)]
 
 
 def test_add():
-    a = FileEdit.from_size(3)
+    a = FileReprEdit.from_size(3)
     assert len(a) == 3
     assert a.graph == [0, 1, 2]
     b = a.insert(0, 0)
@@ -174,7 +189,7 @@ def test_add():
 
 
 def test_del():
-    a = FileEdit.from_size(3)
+    a = FileReprEdit.from_size(3)
     assert a.graph == [0, 1, 2]
     b = a.delete(0, 0)
     assert b.graph == [0, 1, 2]
