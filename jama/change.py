@@ -1,6 +1,6 @@
 from collections.abc import Iterable
 from difflib import SequenceMatcher
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import attr
 from attr import dataclass
@@ -18,7 +18,9 @@ def get_diff(a, b):
 
 @dataclass(slots=True, frozen=True)
 class File(object):
-    graph: PVector[int] = attr.ib(converter=pvector)
+    graph: PVector[int]
+
+    graph = cast(PVector[int], attr.ib(converter=pvector))
 
 
 @dataclass(slots=True, frozen=True)
@@ -104,8 +106,10 @@ class Change(object):
 @dataclass(slots=True, frozen=True)
 class Insert(Change):
     predecessor: Optional[int]
-    lines: PVector[int] = attr.ib(converter=pvector)
+    lines: PVector[int]
     successor: Optional[int]
+
+    lines = cast(PVector[int], attr.ib(converter=pvector))
 
     def __attrs_post_init__(self):
         assert len(self.lines) > 0
@@ -125,7 +129,7 @@ class Insert(Change):
         if not repl:
             return graph[:pre] + new + graph[suc:], 1
         else:
-            return graph[:pre] + [pvector([repl, new])] + graph[suc:], 1
+            return graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:], 1
 
     def apply(self, state: State) -> State:
         graph, count = self.insert(state.graph, self.lines, 0)
