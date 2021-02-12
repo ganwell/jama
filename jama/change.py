@@ -140,13 +140,18 @@ class Insert(Change):
         if not (self.predecessor is None and self.successor is None):
             assert self.predecessor != self.successor
 
-    def insert(self, graph: DAG, lines: PVector[DAG]):
-        count = 1
+    def insert(self, graph: DAG, lines: PVector[int]):
+        count = 0
         s_pre = self.predecessor
         s_suc = self.successor
         pre = None
         suc = None
         for i, item in enumerate(graph):
+            if isinstance(item, pyrsistent.PVector):
+                r_graph, r_count = self.insert(item, lines)
+                count += r_count
+                graph = graph.set(i, r_graph)
+                continue
             if item[0] == s_pre:
                 pre = i + 1
             elif item[0] == s_suc:
@@ -156,13 +161,16 @@ class Insert(Change):
         if s_suc is None:
             suc = len(graph)
         if pre is None or suc is None:
-            return graph, 0
+            return graph, count
         repl = graph[pre:suc]
         new = transform_into_state(lines)
         if not repl:
-            return graph[:pre] + new + graph[suc:], count
+            return graph[:pre] + new + graph[suc:], count + 1
         else:
-            return graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:], count
+            return (
+                graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:],
+                count + 1,
+            )
 
     def apply(self, state: State) -> State:
         if state.is_applied(self):

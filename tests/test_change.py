@@ -26,6 +26,8 @@ change = st.one_of(insert, delete)
 )
 def test_change(initial, changes):
     cur = FileReprEdit.from_size(initial)
+    orig = cur
+    all_changes = []
     for ct, pos, size in changes:
         prev = cur
         if ct == "insert":
@@ -37,11 +39,21 @@ def test_change(initial, changes):
             cur = cur.delete(int(pos * len_cur), to_delete)
         else:
             raise RuntimeError()
-        changes = Change.from_diff(prev, cur)
+        changes = list(Change.from_diff(prev, cur))
+        all_changes.extend(changes)
         state = State.from_file(prev)
         for change in changes:
             state = change.apply(state)
         assert state.to_file().graph == cur.graph
+    # state = State.from_file(orig)
+    # for change in all_changes:
+    #     prev_state = state
+    #     try:
+    #         state = change.apply(state)
+    #     except:
+    #         __import__("pdb").set_trace()
+    #         change.apply(state, True)
+    #         pass
 
 
 def test_state_from_file():
