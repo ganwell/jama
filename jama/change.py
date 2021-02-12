@@ -117,8 +117,8 @@ class Insert(Change):
 
     def insert(self, graph: DAG, iterable: Iterable[int], count: int):
         lines = pvector(iterable)
-        pre = None
-        suc = None
+        pre = 0
+        suc = -1
         for i, item in enumerate(graph):
             if item[0] == self.predecessor:
                 pre = i + 1
