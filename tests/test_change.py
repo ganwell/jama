@@ -70,6 +70,17 @@ def test_complex_insert():
     assert d.graph == [[[(0, True), (1, True)], [(3, True)]], (2, True)]
 
 
+def test_complex_del():
+    a = File([0, 1, 2])
+    b = State.from_file(a)
+    c = Insert(None, [3], 2)
+    d = c.apply(b)
+    assert d.graph == [[[(0, True), (1, True)], [(3, True)]], (2, True)]
+    e = Delete(0)
+    f = e.apply(d)
+    assert f.graph == [[[(0, False), (1, True)], [(3, True)]], (2, True)]
+
+
 def test_diff_add():
     a = FileEdit.from_size(3)
     b = a.insert(0, 1)

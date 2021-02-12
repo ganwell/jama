@@ -3,6 +3,7 @@ from difflib import SequenceMatcher
 from typing import Any, Optional, cast
 
 import attr
+import pyrsistent
 from attr import dataclass
 from pyrsistent import ny, pvector
 from pyrsistent.typing import PVector
@@ -142,10 +143,13 @@ class Insert(Change):
 class Delete(Change):
     line: int
 
-    def delete(self, graph: DAG, line: int, count: int):
+    def delete(self, graph: DAG, line: int):
+        count = 0
         for i, item in enumerate(graph):
-            if isinstance(item, list):
-                count += self.delete(graph, line, count)
+            if isinstance(item, pyrsistent.PVector):
+                r_graph, r_count = self.delete(item, line)
+                count += r_count
+                graph = graph.set(i, r_graph)
             elif isinstance(item, tuple):
                 if item[0] == line:
                     graph = graph.set(i, (line, False))
@@ -155,7 +159,7 @@ class Delete(Change):
         return graph, count
 
     def apply(self, state: State) -> State:
-        graph, count = self.delete(state.graph, self.line, 0)
+        graph, count = self.delete(state.graph, self.line)
         if count != 1:
             raise InconsistentError()
         return State(graph)
