@@ -119,13 +119,17 @@ class Insert(Change):
     def insert(self, graph: DAG, iterable: Iterable[int]):
         count = 0
         lines = pvector(iterable)
-        pre = 0
-        suc = -1
+        s_pre = self.predecessor
+        s_suc = self.successor
         for i, item in enumerate(graph):
-            if item[0] == self.predecessor:
+            if item[0] == s_pre:
                 pre = i + 1
-            elif item[0] == self.successor:
+            elif item[0] == s_suc:
                 suc = i
+        if s_pre is None:
+            pre = 0
+        if s_suc is None:
+            suc = -1
         repl = graph[pre:suc]
         new = transform_into_state(lines)
         if not repl:
