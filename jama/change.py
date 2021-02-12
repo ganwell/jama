@@ -58,7 +58,7 @@ def transform_into_state(graph: PVector[int]) -> DAG:
 
 @dataclass(slots=True, frozen=True)
 class State(object):
-    graph: PVector[DAG]
+    graph: PVector[DAG] = attr.ib(converter=pvector)
 
     @classmethod
     def from_file(cls, file_: File):
@@ -104,14 +104,15 @@ class Change(object):
 @dataclass(slots=True, frozen=True)
 class Insert(Change):
     predecessor: Optional[int]
-    lines: Iterable[int] = attr.ib(converter=pvector)
+    lines: PVector[int] = attr.ib(converter=pvector)
     successor: Optional[int]
 
     def __attrs_post_init__(self):
         assert len(self.lines) > 0
         assert self.predecessor != self.successor
 
-    def insert(self, graph: DAG, lines: Iterable[int], count: int):
+    def insert(self, graph: DAG, iterable: Iterable[int], count: int):
+        lines = pvector(iterable)
         pre = None
         suc = None
         for i, item in enumerate(graph):
