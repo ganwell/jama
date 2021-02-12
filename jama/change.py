@@ -116,7 +116,8 @@ class Insert(Change):
         assert len(self.lines) > 0
         assert self.predecessor != self.successor
 
-    def insert(self, graph: DAG, iterable: Iterable[int], count: int):
+    def insert(self, graph: DAG, iterable: Iterable[int]):
+        count = 0
         lines = pvector(iterable)
         pre = 0
         suc = -1
@@ -133,7 +134,7 @@ class Insert(Change):
             return graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:], 1
 
     def apply(self, state: State) -> State:
-        graph, count = self.insert(state.graph, self.lines, 0)
+        graph, count = self.insert(state.graph, self.lines)
         if count != 1:
             raise InconsistentError()
         return State(graph)
