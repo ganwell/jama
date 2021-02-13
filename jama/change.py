@@ -72,7 +72,7 @@ class FileReprEdit(FileRepr):
 
     @classmethod
     def from_size(cls, size):
-        return cls(pvector(range(size)), size)
+        return cls(pvector(range(size)), size - 1)
 
     def __len__(self):
         return len(self.node_list)
@@ -81,13 +81,13 @@ class FileReprEdit(FileRepr):
         if offset < 0 or offset > len(self):
             raise IndexError()
         node_list = self.node_list
-        uid = self.max_uid
+        uid = self.max_uid + 1
         if size == 0:
             return FileReprEdit(list(node_list), uid)
         node_list = (
             node_list[:offset] + list(range(uid, uid + size)) + node_list[offset:]
         )
-        return FileReprEdit(node_list, self.max_uid + size)
+        return FileReprEdit(node_list, uid + size)
 
     def delete(self, offset, size):
         node_list = self.node_list
