@@ -43,28 +43,28 @@ change = st.one_of(insert, delete)
 #         for change in changes:
 #             state = change.apply(state)
 #         assert state.to_file().node_list == cur.node_list
-
-
-#     # state = cmod.State.from_file(orig)
-#     # for change in all_changes:
-#     #     prev_state = state
-#     #     try:
-#     #         state = change.apply(state)
-#     #     except:
-#     #         __import__("pdb").set_trace()
-#     #         change.apply(state, True)
-#     #         pass
+#
+#
+# #     # state = cmod.State.from_file(orig)
+# #     # for change in all_changes:
+# #     #     prev_state = state
+# #     #     try:
+# #     #         state = change.apply(state)
+# #     #     except:
+# #     #         __import__("pdb").set_trace()
+# #     #         change.apply(state, True)
+# #     #         pass
 
 
 def test_node_to_edge():
-    a = cmod.node_list_to_edge_set([0])
-    assert a == {(Nodes.start, 0), (0, Nodes.end)}
-    a = cmod.node_list_to_edge_set([0, 1])
-    assert a == {(Nodes.start, 0), (0, 1), (1, Nodes.end)}
-    a = cmod.node_list_to_edge_set([1, 0])
-    assert a == {(Nodes.start, 1), (1, 0), (0, Nodes.end)}
-    a = cmod.node_list_to_edge_set([1, 2, 0])
-    assert a == {(Nodes.start, 1), (1, 2), (2, 0), (0, Nodes.end)}
+    a = cmod.node_list_to_edges([0])
+    assert list(a) == [(Nodes.start, 0), (0, Nodes.end)]
+    a = cmod.node_list_to_edges([0, 1])
+    assert list(a) == [(Nodes.start, 0), (0, 1), (1, Nodes.end)]
+    a = cmod.node_list_to_edges([1, 0])
+    assert list(a) == [(Nodes.start, 1), (1, 0), (0, Nodes.end)]
+    a = cmod.node_list_to_edges([1, 2, 0])
+    assert list(a) == [(Nodes.start, 1), (1, 2), (2, 0), (0, Nodes.end)]
 
 
 def test_state_from_file():
@@ -90,16 +90,22 @@ def test_basic_insert():
     b = cmod.State.from_file(a)
     assert b.nodes == [True, True, True]
     assert b.edges == {(Nodes.start, 0), (0, 1), (1, 2), (2, Nodes.end)}
+
     c = cmod.Insert(1, [3], 2)
     d = c.apply(b)
     assert d.nodes == [True, True, True, True]
-    assert d.edges == {(Nodes.start, 0), (0, 1), (1, 2), (1, 3), (3, 2), (2, Nodes.end)}
+    assert d.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, 3),
+        (3, 2),
+        (2, Nodes.end),
+    }
 
     c = cmod.Insert(Nodes.start, [3], 0)
     d = c.apply(b)
     assert d.nodes == [True, True, True, True]
     assert d.edges == {
-        (Nodes.start, 0),
         (0, 1),
         (1, 2),
         (Nodes.start, 3),
@@ -116,9 +122,16 @@ def test_basic_insert():
         (1, 2),
         (2, 3),
         (3, Nodes.end),
-        (2, Nodes.end),
     }
 
+
+def test_complex_insert():
+    a = cmod.FileRepr([0, 1, 2])
+    b = cmod.State.from_file(a)
+    assert b.nodes == [True, True, True]
+    assert b.edges == {(Nodes.start, 0), (0, 1), (1, 2), (2, Nodes.end)}
+
+    __import__("pdb").set_trace()
     c = cmod.Insert(0, [3], 2)
     d = c.apply(b)
     assert d.nodes == [True, True, True, True]

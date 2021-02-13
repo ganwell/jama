@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from difflib import SequenceMatcher
 from enum import Enum
 from typing import Generator, Iterable, Union, cast
 
 import attr
 from attr import dataclass
-from pyrsistent import discard, pset, pvector
+from pyrsistent import pset, pvector
 from pyrsistent.typing import PSet, PVector
 
 # Rules
@@ -102,13 +103,45 @@ class Nodes(Enum):
 
 
 Node = Union[Nodes, int]
+Edge = tuple[Node, Node]
+NodeDict = defaultdict[Node, list[Node]]
+
+
+def edge_set_to_edge_dict(edges: PSet[Edge]) -> NodeDict:
+    result = defaultdict(list)
+    for from_, to in edges:
+        result[from_].append(to)
+    return result
+
+
+def edge_dict_to_node_list(
+    edges: NodeDict, nodes: PVector[bool]
+) -> Generator[int, None, None]:
+    cur = Nodes.start
+    ignore = (Nodes.start, Nodes.end)
+    while True:
+        edge_list = [x for x in edges.get(cur) if x not in ignore and nodes[x]]
+        if edge_list is None:
+            raise RuntimeError
+        elif len(edge_list) > 1:
+            __import__("pdb").set_trace()
+            raise NotImplementedError()
+        elif edge_list == [Nodes.start]:
+            continue
+        elif edge_list == []:
+            break
+        else:
+            node: int = edge_list[0]  # type: ignore
+            cur = node
+            if nodes[node]:
+                yield node
 
 
 def node_list_to_edges(
     nodes: Iterable[Node],
     start: Node = Nodes.start,
     end: Node = Nodes.end,
-) -> Generator[tuple[Node, Node], None, None]:
+) -> Generator[Edge, None, None]:
     prev = start
     for node in nodes:
         yield (prev, node)
@@ -116,29 +149,23 @@ def node_list_to_edges(
     yield (prev, end)
 
 
-def node_list_to_edge_set(
-    nodes: Iterable[Node],
-    start: Node = Nodes.start,
-    end: Node = Nodes.end,
-) -> PSet[tuple[Node, Node]]:
-    return pset(node_list_to_edges(nodes, start, end))
-
-
 # State is something like a CRDT
 @dataclass(slots=True, frozen=True)
 class State(object):
     nodes: PVector[bool]
-    edges: PSet[tuple[Node, Node]]
+    edges: PSet[Edge]
     history: PVector[Change]
 
     @classmethod
     def from_file(cls, file_: FileRepr):
         node_list = file_.node_list
         nodes = pvector([True] * len(node_list))
-        return cls(nodes, node_list_to_edge_set(node_list), pvector())
+        return cls(nodes, pset(node_list_to_edges(node_list)), pvector())
 
     def to_file(self) -> FileRepr:
-        pass
+        edge_dict = edge_set_to_edge_dict(self.edges)
+        node_list = pvector(edge_dict_to_node_list(edge_dict, self.nodes))
+        return FileRepr(node_list)
 
     def has_conflict(self) -> bool:
         raise NotImplementedError()
@@ -155,16 +182,17 @@ class State(object):
         assert min(change.lines) == len(nodes)
         nodes = nodes.extend([True] * len(change.lines))
         assert max(change.lines) + 1 == len(nodes)
-        insert_set = node_list_to_edge_set(
-            change.lines,
-            change.predecessor,
-            change.successor,
+        inserts = list(
+            node_list_to_edges(
+                change.lines,
+                change.predecessor,
+                change.successor,
+            )
         )
-        return State(
-            nodes,
-            self.edges.update(insert_set),
-            self.history.append(change),
-        )
+        edges = self.edges
+        edges = edges.remove((inserts[0][0], inserts[-1][1]))
+        edges = edges.update(inserts)
+        return State(nodes, edges, self.history.append(change))
 
 
 @dataclass(slots=True, frozen=True)
