@@ -42,7 +42,9 @@ change = st.one_of(insert, delete)
 #         state = cmod.State.from_file(prev)
 #         for change in changes:
 #             state = change.apply(state)
-#         assert state.to_file().graph == cur.graph
+#         assert state.to_file().node_list == cur.node_list
+
+
 #     # state = cmod.State.from_file(orig)
 #     # for change in all_changes:
 #     #     prev_state = state
@@ -90,12 +92,12 @@ def test_basic_insert():
     assert b.edges == {(Nodes.start, 0), (0, 1), (1, 2), (2, Nodes.end)}
     c = cmod.Insert(1, [3], 2)
     d = c.apply(b)
-    assert d.nodes == [True, True, True]
+    assert d.nodes == [True, True, True, True]
     assert d.edges == {(Nodes.start, 0), (0, 1), (1, 2), (1, 3), (3, 2), (2, Nodes.end)}
 
     c = cmod.Insert(Nodes.start, [3], 0)
     d = c.apply(b)
-    assert d.nodes == [True, True, True]
+    assert d.nodes == [True, True, True, True]
     assert d.edges == {
         (Nodes.start, 0),
         (0, 1),
@@ -107,7 +109,7 @@ def test_basic_insert():
 
     c = cmod.Insert(2, [3], Nodes.end)
     d = c.apply(b)
-    assert d.nodes == [True, True, True]
+    assert d.nodes == [True, True, True, True]
     assert d.edges == {
         (Nodes.start, 0),
         (0, 1),
@@ -119,7 +121,7 @@ def test_basic_insert():
 
     c = cmod.Insert(0, [3], 2)
     d = c.apply(b)
-    assert d.nodes == [True, True, True]
+    assert d.nodes == [True, True, True, True]
     assert d.edges == {
         (Nodes.start, 0),
         (0, 1),
@@ -130,7 +132,7 @@ def test_basic_insert():
     }
     c = cmod.Insert(Nodes.start, [3], 2)
     d = c.apply(b)
-    assert d.nodes == [True, True, True]
+    assert d.nodes == [True, True, True, True]
     assert d.edges == {
         (Nodes.start, 0),
         (0, 1),
@@ -146,7 +148,7 @@ def test_complex_del():
     b = cmod.State.from_file(a)
     c = cmod.Insert(Nodes.start, [3], 2)
     d = c.apply(b)
-    assert d.nodes == [True, True, True]
+    assert d.nodes == [True, True, True, True]
     assert d.edges == {
         (Nodes.start, 0),
         (0, 1),
@@ -157,7 +159,7 @@ def test_complex_del():
     }
     e = cmod.Delete(0)
     f = e.apply(d)
-    assert f.nodes == [False, True, True]
+    assert f.nodes == [False, True, True, True]
     assert f.edges == {
         (Nodes.start, 0),
         (0, 1),

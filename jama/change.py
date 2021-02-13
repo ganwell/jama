@@ -6,7 +6,7 @@ from typing import Generator, Iterable, Union, cast
 
 import attr
 from attr import dataclass
-from pyrsistent import pset, pvector
+from pyrsistent import discard, pset, pvector
 from pyrsistent.typing import PSet, PVector
 
 # Rules
@@ -151,13 +151,16 @@ class State(object):
         )
 
     def insert(self, change: Insert) -> State:
+        nodes = self.nodes
+        nodes = nodes.extend([True] * len(change.lines))
+        assert max(change.lines) + 1 == len(nodes)
         insert_set = node_list_to_edge_set(
             change.lines,
             change.predecessor,
             change.successor,
         )
         return State(
-            self.nodes,
+            nodes,
             self.edges.update(insert_set),
             self.history.append(change),
         )
@@ -239,6 +242,10 @@ class Insert(Change):
 @dataclass(slots=True, frozen=True)
 class Delete(Change):
     line: int
+
+    def __attrs_post_init__(self):
+        assert self.line != Nodes.end
+        assert self.line != Nodes.start
 
     def apply(self, state: State) -> State:
         return state.delete(self)
