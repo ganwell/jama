@@ -87,7 +87,7 @@ class FileReprEdit(FileRepr):
         node_list = (
             node_list[:offset] + list(range(uid, uid + size)) + node_list[offset:]
         )
-        return FileReprEdit(node_list, uid + size)
+        return FileReprEdit(node_list, uid + size - 1)
 
     def delete(self, offset, size):
         node_list = self.node_list
@@ -118,22 +118,17 @@ def edge_dict_to_node_list(
     edges: NodeDict, nodes: PVector[bool]
 ) -> Generator[int, None, None]:
     cur = Nodes.start
-    ignore = (Nodes.start, Nodes.end)
     while True:
-        edge_list = [x for x in edges.get(cur) if x not in ignore]
-        if edge_list is None:
-            raise RuntimeError
+        edge_list = edges.get(cur)
+        if edge_list[0] is Nodes.end:
+            break
         elif len(edge_list) > 1:
             __import__("pdb").set_trace()
             raise NotImplementedError()
-        elif edge_list == [Nodes.start]:
-            continue
-        elif edge_list == []:
-            break
         else:
             node: int = edge_list[0]  # type: ignore
             cur = node
-            if nodes[node]:
+            if node != Nodes.end and nodes[node]:
                 yield node
 
 
@@ -166,7 +161,7 @@ class State(object):
             nodes = pvector([False] * (max_node + 1))
         else:
             nodes = pvector()
-        for i, _ in enumerate(node_list):
+        for i in node_list:
             nodes = nodes.set(i, True)
         return cls(nodes, pset(node_list_to_edges(node_list)), max_node, pvector())
 
