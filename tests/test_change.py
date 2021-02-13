@@ -21,39 +21,38 @@ delete = st.tuples(st.just("delete"), over_range, over_range)
 change = st.one_of(insert, delete)
 
 
-# @given(st.integers(0, max_len), st.lists(change))
-# def test_change(initial, changes):
-#     cur = cmod.FileReprEdit.from_size(initial)
-#     orig = cur
-#     all_changes = []
-#     for ct, pos, size in changes:
-#         prev = cur
-#         if ct == "insert":
-#             cur = cur.insert(int(pos * len(cur)), size)
-#         elif ct == "delete":
-#             rest = 1.0 - pos
-#             len_cur = len(cur)
-#             to_delete = int(size * rest * len_cur)
-#             cur = cur.delete(int(pos * len_cur), to_delete)
-#         else:
-#             raise RuntimeError()
-#         changes = list(cmod.Change.from_diff(prev, cur))
-#         all_changes.extend(changes)
-#         state = cmod.State.from_file(prev)
-#         for change in changes:
-#             state = change.apply(state)
-#         assert state.to_file().node_list == cur.node_list
-#
-#
-# #     # state = cmod.State.from_file(orig)
-# #     # for change in all_changes:
-# #     #     prev_state = state
-# #     #     try:
-# #     #         state = change.apply(state)
-# #     #     except:
-# #     #         __import__("pdb").set_trace()
-# #     #         change.apply(state, True)
-# #     #         pass
+@given(st.integers(0, max_len), st.lists(change))
+def test_gen_changes(initial, changes):
+    cur = cmod.FileReprEdit.from_size(initial)
+    orig = cur
+    all_changes = []
+    for ct, pos, size in changes:
+        prev = cur
+        if ct == "insert":
+            cur = cur.insert(int(pos * len(cur)), size)
+        elif ct == "delete":
+            rest = 1.0 - pos
+            len_cur = len(cur)
+            to_delete = int(size * rest * len_cur)
+            cur = cur.delete(int(pos * len_cur), to_delete)
+        else:
+            raise RuntimeError()
+        changes = list(cmod.Change.from_diff(prev, cur))
+        all_changes.extend(changes)
+        state = cmod.State.from_file(prev)
+        for change in changes:
+            state = change.apply(state)
+        assert state.to_file().node_list == cur.node_list
+
+    # state = cmod.State.from_file(orig)
+    # for change in all_changes:
+    #     prev_state = state
+    #     try:
+    #         state = change.apply(state)
+    #     except:
+    #         __import__("pdb").set_trace()
+    #         change.apply(state, True)
+    #         pass
 
 
 def test_node_to_edge():
@@ -131,7 +130,6 @@ def test_complex_insert():
     assert b.nodes == [True, True, True]
     assert b.edges == {(Nodes.start, 0), (0, 1), (1, 2), (2, Nodes.end)}
 
-    __import__("pdb").set_trace()
     c = cmod.Insert(0, [3], 2)
     d = c.apply(b)
     assert d.nodes == [True, True, True, True]
