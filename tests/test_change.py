@@ -4,9 +4,13 @@ from hypothesis import example, given, strategies as st
 from jama import change as cmod
 from jama.change import Nodes
 
+max_size = 30
+resolution = max_size * max_size * 4
+over = 3
+
 
 def cap(x):
-    x /= 32768
+    x /= resolution
     if x > 1.0:
         return 1.0
     if x < 0.0:
@@ -14,14 +18,14 @@ def cap(x):
     return x
 
 
-max_len = 30
-over_range = st.integers(-1, 32769).map(cap)
-insert = st.tuples(st.just("insert"), over_range, st.integers(0, max_len))
+over_range = st.integers(-over, resolution + over).map(cap)
+insert = st.tuples(st.just("insert"), over_range, st.integers(0, max_size))
 delete = st.tuples(st.just("delete"), over_range, over_range)
 change = st.one_of(insert, delete)
+change_set = st.lists(change, max_size=max_size)
 
 
-@given(st.integers(0, max_len), st.lists(change))
+@given(st.integers(0, max_size), st.lists(change))
 def test_gen_changes(initial, changes):
     cur = cmod.FileReprEdit.from_size(initial)
     orig = cur
@@ -37,6 +41,7 @@ def test_gen_changes(initial, changes):
             cur = cur.delete(int(pos * len_cur), to_delete)
         else:
             raise RuntimeError()
+        assert len(cur) < resolution
         changes = list(cmod.Change.from_diff(prev, cur))
         all_changes.extend(changes)
         state = cmod.State.from_file(prev)
