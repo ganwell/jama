@@ -93,10 +93,19 @@ def test_basic_insert():
     assert d.nodes == [True, True, True]
     assert d.edges == {(Nodes.start, 0), (0, 1), (1, 2), (1, 3), (3, 2), (2, Nodes.end)}
 
+    c = cmod.Insert(Nodes.start, [3], 0)
+    d = c.apply(b)
+    assert d.nodes == [True, True, True]
+    assert d.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (Nodes.start, 3),
+        (3, 0),
+        (2, Nodes.end),
+    }
 
-#     c = cmod.Insert(None, [3], 0)
-#     d = c.apply(b)
-#     assert d.graph == [(3, True), (0, True), (1, True), (2, True)]
+
 #     c = cmod.Insert(2, [3], None)
 #     d = c.apply(b)
 #     assert d.graph == [(0, True), (1, True), (2, True), (3, True)]

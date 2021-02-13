@@ -165,8 +165,8 @@ class Change(object):
 
     @classmethod
     def pre_suc(_, ag, left, right):
-        pre = None
-        suc = None
+        pre = Nodes.start
+        suc = Nodes.end
         if left:
             pre = ag[left - 1]
         if right != len(ag):
@@ -193,16 +193,17 @@ class Change(object):
 
 @dataclass(slots=True, frozen=True)
 class Insert(Change):
-    predecessor: Optional[int]
+    predecessor: int
     lines: PVector[int]
-    successor: Optional[int]
+    successor: int
 
     lines = cast(PVector[int], attr.ib(converter=pvector))
 
     def __attrs_post_init__(self):
         assert len(self.lines) > 0
-        if not (self.predecessor is None and self.successor is None):
-            assert self.predecessor != self.successor
+        assert self.predecessor != Nodes.end
+        assert self.successor != Nodes.start
+        assert self.predecessor != self.successor
 
     def apply(self, state: State) -> State:
         return state.insert(self)
