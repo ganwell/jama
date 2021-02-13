@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from difflib import SequenceMatcher
 from enum import Enum
-from typing import Any, Generator, Iterable, Optional, cast
+from typing import Generator, Iterable, cast
 
 import attr
-import pyrsistent
 from attr import dataclass
-from pyrsistent import discard, ny, pset, pvector
+from pyrsistent import pset, pvector
 from pyrsistent.typing import PSet, PVector
 
 # Rules
@@ -117,7 +116,7 @@ def node_list_to_edge_set(
     nodes: Iterable[int],
     start: int = Nodes.start,
     end: int = Nodes.end,
-) -> PSet[tuple[Optional[int], int]]:
+) -> PSet[tuple[int, int]]:
     return pset(node_list_to_edges(nodes, start, end))
 
 
