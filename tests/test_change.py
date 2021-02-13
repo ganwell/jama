@@ -47,7 +47,11 @@ def test_gen_changes(initial, changes):
         state = cmod.State.from_file(prev)
         for change in changes:
             state = change.apply(state)
-        assert state.to_file().node_list == cur.node_list
+        try:
+            assert state.to_file().node_list == cur.node_list
+        except:
+            __import__("pdb").set_trace()
+            pass
 
     # state = cmod.State.from_file(orig)
     # for change in all_changes:

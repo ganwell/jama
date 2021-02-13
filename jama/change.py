@@ -120,7 +120,7 @@ def edge_dict_to_node_list(
     cur = Nodes.start
     ignore = (Nodes.start, Nodes.end)
     while True:
-        edge_list = [x for x in edges.get(cur) if x not in ignore and nodes[x]]
+        edge_list = [x for x in edges.get(cur) if x not in ignore]
         if edge_list is None:
             raise RuntimeError
         elif len(edge_list) > 1:
