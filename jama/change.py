@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from difflib import SequenceMatcher
-from typing import Any, Optional, cast
+from typing import Any, Generator, Iterable, Optional, cast
 
 import attr
 import pyrsistent
@@ -94,6 +94,19 @@ class FileReprEdit(FileRepr):
 # TODO use this when it is supported
 # DAG = PVector[Union["DAG", tuple[int, bool]]]
 DAG = PVector[Any]
+
+
+def node_list_to_edges(
+    nodes: Iterable[int],
+) -> Generator[tuple[Optional[int], int], None, None]:
+    prev = None
+    for node in nodes:
+        yield ((prev, node))
+        prev = node
+
+
+def node_list_to_edge_set(nodes: Iterable[int]) -> PSet[tuple[Optional[int], int]]:
+    return pset(node_list_to_edges(nodes))
 
 
 def transform_into_state(graph: PVector[int]) -> DAG:
