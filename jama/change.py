@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from difflib import SequenceMatcher
 from enum import Enum
-from typing import Generator, Iterable, cast
+from typing import Generator, Iterable, Union, cast
 
 import attr
 from attr import dataclass
@@ -91,7 +91,8 @@ class FileReprEdit(FileRepr):
     def delete(self, offset, size):
         node_list = self.node_list
         return FileReprEdit(
-            node_list[:offset] + node_list[offset + size :], self.max_uid
+            node_list[:offset] + node_list[offset + size :],
+            self.max_uid,
         )
 
 
@@ -100,11 +101,14 @@ class Nodes(Enum):
     end = -2
 
 
+Node = Union[Nodes, int]
+
+
 def node_list_to_edges(
-    nodes: Iterable[int],
-    start: int = Nodes.start,
-    end: int = Nodes.end,
-) -> Generator[tuple[int, int], None, None]:
+    nodes: Iterable[Node],
+    start: Node = Nodes.start,
+    end: Node = Nodes.end,
+) -> Generator[tuple[Node, Node], None, None]:
     prev = start
     for node in nodes:
         yield (prev, node)
@@ -113,10 +117,10 @@ def node_list_to_edges(
 
 
 def node_list_to_edge_set(
-    nodes: Iterable[int],
-    start: int = Nodes.start,
-    end: int = Nodes.end,
-) -> PSet[tuple[int, int]]:
+    nodes: Iterable[Node],
+    start: Node = Nodes.start,
+    end: Node = Nodes.end,
+) -> PSet[tuple[Node, Node]]:
     return pset(node_list_to_edges(nodes, start, end))
 
 
@@ -124,7 +128,7 @@ def node_list_to_edge_set(
 @dataclass(slots=True, frozen=True)
 class State(object):
     nodes: PVector[bool]
-    edges: PSet[tuple[int, int]]
+    edges: PSet[tuple[Node, Node]]
     history: PVector[Change]
 
     @classmethod
@@ -148,7 +152,9 @@ class State(object):
 
     def insert(self, change: Insert) -> State:
         insert_set = node_list_to_edge_set(
-            change.lines, change.predecessor, change.successor
+            change.lines,
+            change.predecessor,
+            change.successor,
         )
         return State(
             self.nodes,
@@ -174,20 +180,42 @@ class Change(object):
 
     @classmethod
     def from_diff(cls, a: FileRepr, b: FileRepr):
-        a_graph = a.graph
-        b_graph = b.graph
-        for ct, a_left, a_right, b_left, b_right in get_diff(a_graph, b_graph):
+        a_node_list = a.node_list
+        b_node_list = b.node_list
+        for (
+            ct,
+            a_left,
+            a_right,
+            b_left,
+            b_right,
+        ) in get_diff(a_node_list, b_node_list):
             if ct == "insert":
-                pre, suc = cls.pre_suc(a_graph, a_left, a_left)
-                yield Insert(pre, b_graph[b_left:b_right], suc)
+                pre, suc = cls.pre_suc(
+                    a_node_list,
+                    a_left,
+                    a_left,
+                )
+                yield Insert(
+                    pre,
+                    b_node_list[b_left:b_right],
+                    suc,
+                )
             elif ct == "delete":
-                for line in a_graph[a_left:a_right]:
+                for line in a_node_list[a_left:a_right]:
                     yield Delete(line)
             elif ct == "replace":
-                for line in a_graph[a_left:a_right]:
+                for line in a_node_list[a_left:a_right]:
                     yield Delete(line)
-                pre, suc = cls.pre_suc(a_graph, a_left, a_right)
-                yield Insert(pre, b_graph[b_left:b_right], suc)
+                pre, suc = cls.pre_suc(
+                    a_node_list,
+                    a_left,
+                    a_right,
+                )
+                yield Insert(
+                    pre,
+                    b_node_list[b_left:b_right],
+                    suc,
+                )
 
 
 @dataclass(slots=True, frozen=True)

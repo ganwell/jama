@@ -105,138 +105,173 @@ def test_basic_insert():
         (2, Nodes.end),
     }
 
+    c = cmod.Insert(2, [3], Nodes.end)
+    d = c.apply(b)
+    assert d.nodes == [True, True, True]
+    assert d.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (2, 3),
+        (3, Nodes.end),
+        (2, Nodes.end),
+    }
 
-#     c = cmod.Insert(2, [3], None)
-#     d = c.apply(b)
-#     assert d.graph == [(0, True), (1, True), (2, True), (3, True)]
-#     c = cmod.Insert(0, [3], 2)
-#     d = c.apply(b)
-#     assert d.graph == [(0, True), [[(1, True)], [(3, True)]], (2, True)]
-#
-#
-# def test_complex_insert():
-#     a = cmod.FileRepr([0, 1, 2])
-#     b = cmod.State.from_file(a)
-#     c = cmod.Insert(None, [3], 2)
-#     d = c.apply(b)
-#     assert d.graph == [[[(0, True), (1, True)], [(3, True)]], (2, True)]
-#
-#
-# def test_complex_del():
-#     a = cmod.FileRepr([0, 1, 2])
-#     b = cmod.State.from_file(a)
-#     c = cmod.Insert(None, [3], 2)
-#     d = c.apply(b)
-#     assert d.graph == [[[(0, True), (1, True)], [(3, True)]], (2, True)]
-#     e = cmod.Delete(0)
-#     f = e.apply(d)
-#     assert f.graph == [[[(0, False), (1, True)], [(3, True)]], (2, True)]
-#
-#
-# def test_diff_add():
-#     a = cmod.FileReprEdit.from_size(3)
-#     b = a.insert(0, 1)
-#     assert b.graph == [3, 0, 1, 2]
-#     assert len(b) == 4
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Insert(None, [3], 0)]
-#     b = a.insert(1, 1)
-#     assert b.graph == [0, 3, 1, 2]
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Insert(0, [3], 1)]
-#     b = a.insert(2, 2)
-#     assert b.graph == [0, 1, 3, 4, 2]
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Insert(1, [3, 4], 2)]
-#     b = a.insert(3, 2)
-#     assert b.graph == [0, 1, 2, 3, 4]
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Insert(2, [3, 4], None)]
-#
-#
-# def test_diff_del():
-#     a = cmod.FileReprEdit.from_size(3)
-#     assert a.graph == [0, 1, 2]
-#     b = a.delete(0, 1)
-#     assert b.graph == [1, 2]
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(0)]
-#     b = a.delete(1, 1)
-#     assert b.graph == [0, 2]
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(1)]
-#     b = a.delete(1, 2)
-#     assert b.graph == [0]
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(1), cmod.Delete(2)]
-#
-#
-# def test_diff_repl():
-#     a = cmod.FileRepr([0, 1, 2])
-#     b = cmod.FileRepr([0, 3, 2])
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(1), cmod.Insert(0, [3], 2)]
-#     a = cmod.FileRepr([0, 1, 2])
-#     b = cmod.FileRepr([0, 1, 3])
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(2), cmod.Insert(1, [3], None)]
-#     a = cmod.FileRepr([0, 1, 2])
-#     b = cmod.FileRepr([3, 1, 2])
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(0), cmod.Insert(None, [3], 1)]
-#     a = cmod.FileRepr([0, 1, 2])
-#     b = cmod.FileRepr([0, 3, 4, 2])
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(1), cmod.Insert(0, [3, 4], 2)]
-#     a = cmod.FileRepr([0, 1, 2])
-#     b = cmod.FileRepr([0, 3])
-#     c = list(cmod.Change.from_diff(a, b))
-#     assert c == [cmod.Delete(1), cmod.Delete(2), cmod.Insert(0, [3], None)]
-#
-#
-# def test_add():
-#     a = cmod.FileReprEdit.from_size(3)
-#     assert len(a) == 3
-#     assert a.graph == [0, 1, 2]
-#     b = a.insert(0, 0)
-#     assert b.graph == [0, 1, 2]
-#     b = a.insert(0, 1)
-#     assert b.graph == [3, 0, 1, 2]
-#     assert len(b) == 4
-#     b = a.insert(0, 2)
-#     assert b.graph == [3, 4, 0, 1, 2]
-#     b = a.insert(1, 0)
-#     assert b.graph == [0, 1, 2]
-#     b = a.insert(1, 1)
-#     assert b.graph == [0, 3, 1, 2]
-#     b = a.insert(1, 2)
-#     assert b.graph == [0, 3, 4, 1, 2]
-#     b = a.insert(1, 2)
-#     assert b.graph == [0, 3, 4, 1, 2]
-#     b = a.insert(2, 1)
-#     assert b.graph == [0, 1, 3, 2]
-#     b = a.insert(3, 1)
-#     assert b.graph == [0, 1, 2, 3]
-#     with pytest.raises(IndexError):
-#         b = a.insert(4, 1)
-#     with pytest.raises(IndexError):
-#         b = a.insert(5, 1)
-#     with pytest.raises(IndexError):
-#         b = a.insert(-1, 1)
-#
-#
-# def test_del():
-#     a = cmod.FileReprEdit.from_size(3)
-#     assert a.graph == [0, 1, 2]
-#     b = a.delete(0, 0)
-#     assert b.graph == [0, 1, 2]
-#     b = a.delete(1, 0)
-#     assert b.graph == [0, 1, 2]
-#     b = a.delete(0, 1)
-#     assert b.graph == [1, 2]
-#     b = a.delete(0, 2)
-#     assert b.graph == [2]
-#     b = a.delete(1, 2)
-#     assert b.graph == [0]
-#     c = b.insert(0, 1)
-#     assert c.graph == [3, 0]
+    c = cmod.Insert(0, [3], 2)
+    d = c.apply(b)
+    assert d.nodes == [True, True, True]
+    assert d.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (0, 3),
+        (3, 2),
+        (2, Nodes.end),
+    }
+    c = cmod.Insert(Nodes.start, [3], 2)
+    d = c.apply(b)
+    assert d.nodes == [True, True, True]
+    assert d.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (Nodes.start, 3),
+        (3, 2),
+        (2, Nodes.end),
+    }
+
+
+def test_complex_del():
+    a = cmod.FileRepr([0, 1, 2])
+    b = cmod.State.from_file(a)
+    c = cmod.Insert(Nodes.start, [3], 2)
+    d = c.apply(b)
+    assert d.nodes == [True, True, True]
+    assert d.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (Nodes.start, 3),
+        (3, 2),
+        (2, Nodes.end),
+    }
+    e = cmod.Delete(0)
+    f = e.apply(d)
+    assert f.nodes == [False, True, True]
+    assert f.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (Nodes.start, 3),
+        (3, 2),
+        (2, Nodes.end),
+    }
+
+
+def test_diff_add():
+    a = cmod.FileReprEdit.from_size(3)
+    b = a.insert(0, 1)
+    assert b.node_list == [3, 0, 1, 2]
+    assert len(b) == 4
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert(Nodes.start, [3], 0)]
+    b = a.insert(1, 1)
+    assert b.node_list == [0, 3, 1, 2]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert(0, [3], 1)]
+    b = a.insert(2, 2)
+    assert b.node_list == [0, 1, 3, 4, 2]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert(1, [3, 4], 2)]
+    b = a.insert(3, 2)
+    assert b.node_list == [0, 1, 2, 3, 4]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert(2, [3, 4], Nodes.end)]
+
+
+def test_diff_del():
+    a = cmod.FileReprEdit.from_size(3)
+    assert a.node_list == [0, 1, 2]
+    b = a.delete(0, 1)
+    assert b.node_list == [1, 2]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(0)]
+    b = a.delete(1, 1)
+    assert b.node_list == [0, 2]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(1)]
+    b = a.delete(1, 2)
+    assert b.node_list == [0]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(1), cmod.Delete(2)]
+
+
+def test_diff_repl():
+    a = cmod.FileRepr([0, 1, 2])
+    b = cmod.FileRepr([0, 3, 2])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(1), cmod.Insert(0, [3], 2)]
+    a = cmod.FileRepr([0, 1, 2])
+    b = cmod.FileRepr([0, 1, 3])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(2), cmod.Insert(1, [3], Nodes.end)]
+    a = cmod.FileRepr([0, 1, 2])
+    b = cmod.FileRepr([3, 1, 2])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(0), cmod.Insert(Nodes.start, [3], 1)]
+    a = cmod.FileRepr([0, 1, 2])
+    b = cmod.FileRepr([0, 3, 4, 2])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(1), cmod.Insert(0, [3, 4], 2)]
+    a = cmod.FileRepr([0, 1, 2])
+    b = cmod.FileRepr([0, 3])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Delete(1), cmod.Delete(2), cmod.Insert(0, [3], Nodes.end)]
+
+
+def test_add():
+    a = cmod.FileReprEdit.from_size(3)
+    assert len(a) == 3
+    assert a.node_list == [0, 1, 2]
+    b = a.insert(0, 0)
+    assert b.node_list == [0, 1, 2]
+    b = a.insert(0, 1)
+    assert b.node_list == [3, 0, 1, 2]
+    assert len(b) == 4
+    b = a.insert(0, 2)
+    assert b.node_list == [3, 4, 0, 1, 2]
+    b = a.insert(1, 0)
+    assert b.node_list == [0, 1, 2]
+    b = a.insert(1, 1)
+    assert b.node_list == [0, 3, 1, 2]
+    b = a.insert(1, 2)
+    assert b.node_list == [0, 3, 4, 1, 2]
+    b = a.insert(1, 2)
+    assert b.node_list == [0, 3, 4, 1, 2]
+    b = a.insert(2, 1)
+    assert b.node_list == [0, 1, 3, 2]
+    b = a.insert(3, 1)
+    assert b.node_list == [0, 1, 2, 3]
+    with pytest.raises(IndexError):
+        b = a.insert(4, 1)
+    with pytest.raises(IndexError):
+        b = a.insert(5, 1)
+    with pytest.raises(IndexError):
+        b = a.insert(-1, 1)
+
+
+def test_del():
+    a = cmod.FileReprEdit.from_size(3)
+    assert a.node_list == [0, 1, 2]
+    b = a.delete(0, 0)
+    assert b.node_list == [0, 1, 2]
+    b = a.delete(1, 0)
+    assert b.node_list == [0, 1, 2]
+    b = a.delete(0, 1)
+    assert b.node_list == [1, 2]
+    b = a.delete(0, 2)
+    assert b.node_list == [2]
+    b = a.delete(1, 2)
+    assert b.node_list == [0]
+    c = b.insert(0, 1)
+    assert c.node_list == [3, 0]
