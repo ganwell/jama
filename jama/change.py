@@ -159,7 +159,12 @@ class State(object):
     @classmethod
     def from_file(cls, file_: FileRepr):
         node_list = file_.node_list
-        nodes = pvector([True] * len(node_list))
+        if node_list:
+            nodes = pvector([False] * max(node_list))
+        else:
+            nodes = pvector()
+        for i, _ in enumerate(node_list):
+            nodes = nodes.set(i, True)
         return cls(nodes, pset(node_list_to_edges(node_list)), pvector())
 
     def to_file(self) -> FileRepr:
