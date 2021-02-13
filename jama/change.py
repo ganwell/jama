@@ -152,6 +152,7 @@ class State(object):
 
     def insert(self, change: Insert) -> State:
         nodes = self.nodes
+        assert min(change.lines) == len(nodes)
         nodes = nodes.extend([True] * len(change.lines))
         assert max(change.lines) + 1 == len(nodes)
         insert_set = node_list_to_edge_set(
