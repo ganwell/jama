@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from difflib import SequenceMatcher
+from enum import Enum
 from typing import Any, Generator, Iterable, Optional, cast
 
 import attr
@@ -60,9 +61,9 @@ def get_diff(a, b):
 
 @dataclass(slots=True, frozen=True)
 class FileRepr(object):
-    graph: PVector[int]
+    node_list: PVector[int]
 
-    graph = cast(PVector[int], attr.ib(converter=pvector))
+    node_list = cast(PVector[int], attr.ib(converter=pvector))
 
 
 @dataclass(slots=True, frozen=True)
@@ -74,78 +75,87 @@ class FileReprEdit(FileRepr):
         return cls(pvector(range(size)), size)
 
     def __len__(self):
-        return len(self.graph)
+        return len(self.node_list)
 
     def insert(self, offset, size):
         if offset < 0 or offset > len(self):
             raise IndexError()
-        graph = self.graph
+        node_list = self.node_list
         uid = self.max_uid
         if size == 0:
-            return FileReprEdit(list(graph), uid)
-        graph = graph[:offset] + list(range(uid, uid + size)) + graph[offset:]
-        return FileReprEdit(graph, self.max_uid + size)
+            return FileReprEdit(list(node_list), uid)
+        node_list = (
+            node_list[:offset] + list(range(uid, uid + size)) + node_list[offset:]
+        )
+        return FileReprEdit(node_list, self.max_uid + size)
 
     def delete(self, offset, size):
-        graph = self.graph
-        return FileReprEdit(graph[:offset] + graph[offset + size :], self.max_uid)
+        node_list = self.node_list
+        return FileReprEdit(
+            node_list[:offset] + node_list[offset + size :], self.max_uid
+        )
 
 
-# TODO use this when it is supported
-# DAG = PVector[Union["DAG", tuple[int, bool]]]
-DAG = PVector[Any]
+class Nodes(Enum):
+    start = -1
+    end = -2
 
 
 def node_list_to_edges(
     nodes: Iterable[int],
-) -> Generator[tuple[Optional[int], int], None, None]:
-    prev = None
+    start: int = Nodes.start,
+    end: int = Nodes.end,
+) -> Generator[tuple[int, int], None, None]:
+    prev = start
     for node in nodes:
-        yield ((prev, node))
+        yield (prev, node)
         prev = node
+    yield (prev, end)
 
 
-def node_list_to_edge_set(nodes: Iterable[int]) -> PSet[tuple[Optional[int], int]]:
-    return pset(node_list_to_edges(nodes))
+def node_list_to_edge_set(
+    nodes: Iterable[int],
+    start: int = Nodes.start,
+    end: int = Nodes.end,
+) -> PSet[tuple[Optional[int], int]]:
+    return pset(node_list_to_edges(nodes, start, end))
 
 
-def transform_into_state(graph: PVector[int]) -> DAG:
-    return graph.transform([ny], lambda x: (x, True))
-
-
-def transform_into_file(graph: PVector[DAG]) -> PVector[int]:
-    return cast(
-        PVector[int],
-        graph.transform([lambda i, v: not v[1]], discard).transform(
-            [ny], lambda x: x[0]
-        ),
-    )
-
-
-# State is something like CRDT
+# State is something like a CRDT
 @dataclass(slots=True, frozen=True)
 class State(object):
-    graph: PVector[DAG]
-    # I think the new representation of the state is fully idempotent and no history is neede
-    # at least no the history_set.
-    history: PVector[Change] = cast(PVector["Change"], attr.ib(default=pvector()))
-    history_set: PSet[Change] = cast(PSet["Change"], attr.ib(default=pset()))
+    nodes: PVector[bool]
+    edges: PSet[tuple[int, int]]
+    history: PVector[Change]
 
     @classmethod
     def from_file(cls, file_: FileRepr):
-        return cls(transform_into_state(file_.graph))
-
-    def record(self, graph: PVector[DAG], change: Change):
-        return State(graph, self.history.append(change), self.history_set.add(change))
+        node_list = file_.node_list
+        nodes = pvector([True] * len(node_list))
+        return cls(nodes, node_list_to_edge_set(node_list), pvector())
 
     def to_file(self) -> FileRepr:
-        return FileRepr(transform_into_file(self.graph))
-
-    def is_applied(self, change: Change):
-        return change in self.history_set
+        pass
 
     def has_conflict(self) -> bool:
         raise NotImplementedError()
+
+    def delete(self, change: Delete) -> State:
+        return State(
+            self.nodes.set(change.line, False),
+            self.edges,
+            self.history.append(change),
+        )
+
+    def insert(self, change: Insert) -> State:
+        insert_set = node_list_to_edge_set(
+            change.lines, change.predecessor, change.successor
+        )
+        return State(
+            self.nodes,
+            self.edges.update(insert_set),
+            self.history.append(change),
+        )
 
 
 @dataclass(slots=True, frozen=True)
@@ -194,72 +204,13 @@ class Insert(Change):
         if not (self.predecessor is None and self.successor is None):
             assert self.predecessor != self.successor
 
-    def insert(self, graph: DAG, lines: PVector[int]):
-        count = 0
-        s_pre = self.predecessor
-        s_suc = self.successor
-        pre = None
-        suc = None
-        for i, item in enumerate(graph):
-            if isinstance(item, pyrsistent.PVector):
-                r_graph, r_count = self.insert(item, lines)
-                count += r_count
-                graph = graph.set(i, r_graph)
-                continue
-            if item[0] == s_pre:
-                pre = i + 1
-            elif item[0] == s_suc:
-                suc = i
-        if s_pre is None:
-            pre = 0
-        if s_suc is None:
-            suc = len(graph)
-        if pre is None or suc is None:
-            return graph, count
-        repl = graph[pre:suc]
-        new = transform_into_state(lines)
-        if not repl:
-            return graph[:pre] + new + graph[suc:], count + 1
-        else:
-            # TODO: this creates a binary branch. maybe we could use a marker to find pure
-            # branching nodes and extend them instead of chaining binary branches.
-            return (
-                graph[:pre] + pvector([pvector([repl, new])]) + graph[suc:],
-                count + 1,
-            )
-
     def apply(self, state: State) -> State:
-        if state.is_applied(self):
-            return state
-        graph, count = self.insert(state.graph, self.lines)
-        if count != 1:
-            raise InconsistentError()
-        return state.record(graph, self)
+        return state.insert(self)
 
 
 @dataclass(slots=True, frozen=True)
 class Delete(Change):
     line: int
 
-    def delete(self, graph: DAG, line: int):
-        count = 0
-        for i, item in enumerate(graph):
-            if isinstance(item, pyrsistent.PVector):
-                r_graph, r_count = self.delete(item, line)
-                count += r_count
-                graph = graph.set(i, r_graph)
-            elif isinstance(item, tuple):
-                if item[0] == line:
-                    graph = graph.set(i, (line, False))
-                    count += 1
-            else:
-                raise InconsistentError()
-        return graph, count
-
     def apply(self, state: State) -> State:
-        if state.is_applied(self):
-            return state
-        graph, count = self.delete(state.graph, self.line)
-        if count != 1:
-            raise InconsistentError()
-        return state.record(graph, self)
+        return state.delete(self)
