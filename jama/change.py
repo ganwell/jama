@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any, Optional, cast
 
@@ -9,6 +8,46 @@ import pyrsistent
 from attr import dataclass
 from pyrsistent import discard, ny, pset, pvector
 from pyrsistent.typing import PSet, PVector
+
+# Rules
+# =====
+#
+# The algorithm tracks lines and not their content. Of course the changes can be replayed
+# on the actual content to get a result.
+#
+# 0. Every line in a file has a unique id (0, 1, 2)
+# 1. A line cannot be changed or removed: only inserted and hidden
+# 2. Lines inserted get incremented uids
+# 4. A line that is inserted can "replace" existing lines
+#    -> This creates a paralell path in the graph (again no information remove)
+# 5. Line can be inserted between hidden line
+#
+# This means no information is ever removed from the state. A state can be in conflict,
+# which is represented by its graph. If the file is not in conflict it can be traversed
+# to create a new flat file. The changes that cause the conflic are identified and can
+# be reverted.
+
+# Example
+# =======
+#
+# v = visible
+# h = hidden
+#
+# We call hide Delete because that is the action hide prepresents.
+#
+# [(0, v), (1, v), (2, v)] -> Delete(1) -> [(0, v), (1, h), (2, v)] ->
+# Insert(0, [3], 2) -> [(0, v), [(1, h), (3, v)], (2, v)]
+#
+# is the same as
+# [(0, v), (1, v), (2, v)] -> Insert(0, [3], 2) -> [(0, v), [(1, v), 3, v], (2, v)]
+# Delete(1) ->  [(0, v), [(1, h), (3, v)], (2, v)]
+#
+# both read as: (0, 3, 2)
+#
+# at least some changes are commutative. I hope that most non-conflicting changes are commutative.
+
+# TODO: Incremental purging might reduce complexity, but probably kills a lot of
+# commutation opertunities
 
 
 class InconsistentError(Exception):
@@ -74,6 +113,8 @@ def transform_into_file(graph: PVector[DAG]) -> PVector[int]:
 @dataclass(slots=True, frozen=True)
 class State(object):
     graph: PVector[DAG]
+    # I think the new representation of the state is fully idempotent and no history is neede
+    # at least no the history_set.
     history: PVector[Change] = cast(PVector["Change"], attr.ib(default=pvector()))
     history_set: PSet[Change] = cast(PSet["Change"], attr.ib(default=pset()))
 
