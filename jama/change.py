@@ -154,18 +154,21 @@ def node_list_to_edges(
 class State(object):
     nodes: PVector[bool]
     edges: PSet[Edge]
+    max_node: int
     history: PVector[Change]
 
     @classmethod
     def from_file(cls, file_: FileRepr):
         node_list = file_.node_list
+        max_node = 0
         if node_list:
-            nodes = pvector([False] * max(node_list))
+            max_node = max(node_list)
+            nodes = pvector([False] * (max_node + 1))
         else:
             nodes = pvector()
         for i, _ in enumerate(node_list):
             nodes = nodes.set(i, True)
-        return cls(nodes, pset(node_list_to_edges(node_list)), pvector())
+        return cls(nodes, pset(node_list_to_edges(node_list)), max_node, pvector())
 
     def to_file(self) -> FileRepr:
         edge_dict = edge_set_to_edge_dict(self.edges)
@@ -179,17 +182,22 @@ class State(object):
         return State(
             self.nodes.set(change.line, False),
             self.edges,
+            self.max_node,
             self.history.append(change),
         )
 
     def insert(self, change: Insert) -> State:
         nodes = self.nodes
-        assert min(change.lines) == len(nodes)
-        nodes = nodes.extend([True] * len(change.lines))
-        assert max(change.lines) + 1 == len(nodes)
+        lines = change.lines
+        assert min(lines) >= self.max_node
+        max_node = max(lines)
+        nodes = nodes.extend([False] * (max_node - self.max_node))
+        assert max_node <= len(nodes)
+        for line in lines:
+            nodes = nodes.set(line, True)
         inserts = list(
             node_list_to_edges(
-                change.lines,
+                lines,
                 change.predecessor,
                 change.successor,
             )
@@ -197,7 +205,7 @@ class State(object):
         edges = self.edges
         edges = edges.remove((inserts[0][0], inserts[-1][1]))
         edges = edges.update(inserts)
-        return State(nodes, edges, self.history.append(change))
+        return State(nodes, edges, max_node, self.history.append(change))
 
 
 @dataclass(slots=True, frozen=True)
