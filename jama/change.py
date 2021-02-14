@@ -109,6 +109,7 @@ class Nodes(Enum):
 Node = Union[Nodes, int]
 Edge = tuple[Node, Node]
 NodeDict = defaultdict[Node, set[Node]]
+short_circuit = (Nodes.start, Nodes.end)
 
 
 def get_outgoing(edges: PSet[Edge]) -> NodeDict:
@@ -136,11 +137,13 @@ def get_incoming_and_outgoing(edges: PSet[Edge]) -> tuple[NodeDict, NodeDict]:
 
 def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
     # TODO improve because NodeDict now contains a set
+    # TODO this is ugly
     cur: Any = Nodes.start
+    edge_set = edges.get(cur)
+    edge_set.discard(Nodes.end)
     while True:
-        edge_set = edges.get(cur)
         if not edge_set:
-            raise InconsistentError()
+            break
         else:
             edge_list = list(edge_set)
             if edge_list[0] is Nodes.end:
@@ -151,6 +154,7 @@ def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
                 cur = edge_list[0]
                 if cur != Nodes.end:
                     yield cur
+        edge_set = edges.get(cur)
 
 
 def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]) -> set[Edge]:
