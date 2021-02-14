@@ -1,5 +1,6 @@
 #!/bin/sh
 
+export JAMA_PROFILE=auto
 find . -name "*.py" | entr sh -c "
     set -e
     pytest tests
