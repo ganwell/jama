@@ -30,13 +30,11 @@ _x = 0
 
 @given(st.integers(0, max_size), st.lists(change))
 @example(
-    initial=4,
-    changes=[("delete", 0.0, 0.5)],
+    initial=2,
+    changes=[("delete", 0.0, 0.5), ("insert", 0.0, 1)],
 )
 def test_gen_changes(initial, changes):
-    global _x
-    print(_x)
-    _x += 1
+    __import__("pdb").set_trace()
     cur = cmod.FileReprEdit.from_size(initial)
     orig = cur
     all_changes = []
@@ -58,9 +56,10 @@ def test_gen_changes(initial, changes):
         for change in changes:
             state = change.apply(state)
         assert state.to_file().node_list == cur.node_list
-    # state = cmod.State.from_file(orig)
-    # for change in all_changes:
-    #     state = change.apply(state)
+    state = cmod.State.from_file(orig)
+    for change in all_changes:
+        state = change.apply(state)
+    assert state.to_file().node_list == cur.node_list
 
 
 def test_node_to_edge():
@@ -106,6 +105,24 @@ def test_collect():
     f = e.apply(d)
     g = cmod.collect_deleted_nodes(f.edges, f.nodes)
     assert g == {(Nodes.start, 0), (0, 1), (0, 3), (1, Nodes.end), (3, Nodes.end)}
+
+
+def test_collect_problem():
+    a = cmod.FileReprEdit.from_size(2)
+    b = cmod.State.from_file(a)
+    c = cmod.Delete(0).apply(b)
+    assert c.nodes == [False, True]
+    d = cmod.Insert(Nodes.start, [2], 1).apply(c)
+    assert d.edges == {
+        (Nodes.start, 0),
+        (0, 1),
+        (1, Nodes.end),
+        (Nodes.start, 2),
+        (2, 1),
+    }
+    e = cmod.collect_deleted_nodes(d.edges, d.nodes)
+    __import__("pdb").set_trace()
+    pass
 
 
 def test_collect_complex():
