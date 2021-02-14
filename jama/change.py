@@ -198,7 +198,7 @@ class State(object):
             )
         )
         edges = self.edges
-        edges = edges.remove((inserts[0][0], inserts[-1][1]))
+        edges = edges.remove((change.predecessor, change.successor))
         edges = edges.update(inserts)
         return State(nodes, edges, max_node, self.history.append(change))
 
