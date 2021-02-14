@@ -55,6 +55,10 @@ class InconsistentError(Exception):
     pass
 
 
+class ConflictError(Exception):
+    pass
+
+
 def get_diff(a, b):
     return SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes()
 
@@ -131,7 +135,6 @@ def get_incoming_and_outgoing(edges: PSet[Edge]) -> tuple[NodeDict, NodeDict]:
 
 
 def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
-    # TODO nodes not needed anymore
     cur: Any = Nodes.start
     while True:
         edge_list = edges.get(cur)
@@ -140,7 +143,7 @@ def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
         elif edge_list[0] is Nodes.end:
             break
         elif len(edge_list) > 1:
-            raise NotImplementedError()
+            raise ConflictError()
         else:
             cur = edge_list[0]
             if cur != Nodes.end:
@@ -148,11 +151,11 @@ def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
 
 
 def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]):
+    incoming, outgoing = get_incoming_and_outgoing(edges)
     for node, value in enumerate(nodes):
         if not value:
             removes: list[Edge] = []
             inserts: list[Edge] = []
-            incoming, outgoing = get_incoming_and_outgoing(edges)
             for i_node in incoming[node]:
                 removes.append((i_node, node))
             for o_node in outgoing[node]:
@@ -160,6 +163,22 @@ def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]):
             for i_node in incoming[node]:
                 for o_node in outgoing[node]:
                     inserts.append((i_node, o_node))
+            for from_, to in inserts:
+                out_list = outgoing[from_]
+                try:
+                    out_list.remove(node)
+                    out_list.append(to)
+                except:
+                    pass
+
+                in_list = incoming[to]
+                try:
+                    in_list.remove(node)
+                    in_list.append(from_)
+                except:
+                    pass
+            incoming.pop(node)
+            outgoing.pop(node)
             edges = edges.update(inserts)
             edges = edges.difference(removes)
     return edges
