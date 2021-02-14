@@ -153,7 +153,8 @@ def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
                     yield cur
 
 
-def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]):
+def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]) -> set[Edge]:
+    edges = set(edges)
     incoming, outgoing = get_incoming_and_outgoing(edges)
     for node, value in enumerate(nodes):
         if not value:
@@ -176,7 +177,7 @@ def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]):
                 in_list.add(from_)
             incoming.pop(node)
             outgoing.pop(node)
-            edges = edges.update(inserts)
+            edges.update(inserts)
             edges = edges.difference(removes)
     return edges
 
