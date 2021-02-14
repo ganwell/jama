@@ -172,7 +172,7 @@ class State(object):
     @classmethod
     def from_file(cls, file_: FileRepr):
         node_list = file_.node_list
-        max_node = 0
+        max_node = -1
         if node_list:
             max_node = max(node_list)
             nodes = pvector([False] * (max_node + 1))
@@ -201,7 +201,7 @@ class State(object):
     def insert(self, change: Insert) -> State:
         nodes = self.nodes
         lines = change.lines
-        assert min(lines) >= self.max_node
+        assert min(lines) > self.max_node
         max_node = max(lines)
         nodes = nodes.extend([False] * (max_node - self.max_node))
         assert max_node <= len(nodes)
@@ -215,7 +215,10 @@ class State(object):
             )
         )
         edges = self.edges
-        edges = edges.remove((change.predecessor, change.successor))
+        try:
+            edges = edges.remove((change.predecessor, change.successor))
+        except KeyError:
+            pass
         edges = edges.update(inserts)
         return State(nodes, edges, max_node, self.history.append(change))
 
