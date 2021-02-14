@@ -109,6 +109,7 @@ class Nodes(Enum):
 Node = Union[Nodes, int]
 Edge = tuple[Node, Node]
 NodeDict = defaultdict[Node, set[Node]]
+# TODO this should be a special case of some general delete parallel path removal
 short_circuit = (Nodes.start, Nodes.end)
 
 
