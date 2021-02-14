@@ -130,9 +130,8 @@ def get_incoming_and_outgoing(edges: PSet[Edge]) -> tuple[NodeDict, NodeDict]:
     return incoming, outgoing
 
 
-def edge_dict_to_node_list(
-    edges: NodeDict, nodes: PVector[bool]
-) -> Generator[int, None, None]:
+def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
+    # TODO nodes not needed anymore
     cur: Any = Nodes.start
     while True:
         edge_list = edges.get(cur)
@@ -141,12 +140,29 @@ def edge_dict_to_node_list(
         elif edge_list[0] is Nodes.end:
             break
         elif len(edge_list) > 1:
-            __import__("pdb").set_trace()
             raise NotImplementedError()
         else:
             cur = edge_list[0]
-            if cur != Nodes.end and nodes[cur]:
+            if cur != Nodes.end:
                 yield cur
+
+
+def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]):
+    for node, value in enumerate(nodes):
+        if not value:
+            removes: list[Edge] = []
+            inserts: list[Edge] = []
+            incoming, outgoing = get_incoming_and_outgoing(edges)
+            for i_node in incoming[node]:
+                removes.append((i_node, node))
+            for o_node in outgoing[node]:
+                removes.append((node, o_node))
+            for i_node in incoming[node]:
+                for o_node in outgoing[node]:
+                    inserts.append((i_node, o_node))
+            edges = edges.update(inserts)
+            edges = edges.difference(removes)
+    return edges
 
 
 def node_list_to_edges(
@@ -170,6 +186,12 @@ class State(object):
     history: PVector[Change]
 
     @classmethod
+    def from_graph(cls, nodes: Iterable[bool], edges: Iterable[Edge]):
+        # TODO add consistency check
+        nodes = pvector(nodes)
+        return cls(nodes, pset(edges), len(nodes) - 1, pvector())
+
+    @classmethod
     def from_file(cls, file_: FileRepr):
         node_list = file_.node_list
         max_node = -1
@@ -183,9 +205,10 @@ class State(object):
         return cls(nodes, pset(node_list_to_edges(node_list)), max_node, pvector())
 
     def to_file(self) -> FileRepr:
-        edge_dict = get_outgoing(self.edges)
-        node_list = pvector(edge_dict_to_node_list(edge_dict, self.nodes))
-        return FileRepr(node_list)
+        edges = collect_deleted_nodes(self.edges, self.nodes)
+        edges = get_outgoing(edges)
+        node_list = edges_to_node_list(edges)
+        return FileRepr(pvector(node_list))
 
     def has_conflict(self) -> bool:
         raise NotImplementedError()
