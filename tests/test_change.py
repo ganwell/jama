@@ -4,7 +4,7 @@ from hypothesis import example, given, strategies as st
 from jama import change as cmod
 from jama.change import Nodes
 
-max_size = 10
+max_size = 30
 resolution = max_size * max_size * 4
 over = 3
 

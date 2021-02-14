@@ -108,46 +108,49 @@ class Nodes(Enum):
 
 Node = Union[Nodes, int]
 Edge = tuple[Node, Node]
-NodeDict = defaultdict[Node, list[Node]]
+NodeDict = defaultdict[Node, set[Node]]
 
 
 def get_outgoing(edges: PSet[Edge]) -> NodeDict:
-    outgoing = defaultdict(list)
+    outgoing = defaultdict(set)
     for from_, to in edges:
-        outgoing[from_].append(to)
+        outgoing[from_].add(to)
     return outgoing
 
 
 def get_incoming(edges: PSet[Edge]) -> NodeDict:
-    incoming = defaultdict(list)
+    incoming = defaultdict(set)
     for from_, to in edges:
-        incoming[to].append(from_)
+        incoming[to].add(from_)
     return incoming
 
 
 def get_incoming_and_outgoing(edges: PSet[Edge]) -> tuple[NodeDict, NodeDict]:
-    outgoing = defaultdict(list)
-    incoming = defaultdict(list)
+    outgoing = defaultdict(set)
+    incoming = defaultdict(set)
     for from_, to in edges:
-        outgoing[from_].append(to)
-        incoming[to].append(from_)
+        outgoing[from_].add(to)
+        incoming[to].add(from_)
     return incoming, outgoing
 
 
 def edges_to_node_list(edges: NodeDict) -> Generator[int, None, None]:
+    # TODO improve because NodeDict now contains a set
     cur: Any = Nodes.start
     while True:
-        edge_list = edges.get(cur)
-        if not edge_list:
+        edge_set = edges.get(cur)
+        if not edge_set:
             raise InconsistentError()
-        elif edge_list[0] is Nodes.end:
-            break
-        elif len(edge_list) > 1:
-            raise ConflictError()
         else:
-            cur = edge_list[0]
-            if cur != Nodes.end:
-                yield cur
+            edge_list = list(edge_set)
+            if edge_list[0] is Nodes.end:
+                break
+            elif len(edge_list) > 1:
+                raise ConflictError()
+            else:
+                cur = edge_list[0]
+                if cur != Nodes.end:
+                    yield cur
 
 
 def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]):
@@ -165,18 +168,12 @@ def collect_deleted_nodes(edges: PSet[Edge], nodes: PVector[bool]):
                     inserts.append((i_node, o_node))
             for from_, to in inserts:
                 out_list = outgoing[from_]
-                try:
-                    out_list.remove(node)
-                    out_list.append(to)
-                except:
-                    pass
+                out_list.discard(node)
+                out_list.add(to)
 
                 in_list = incoming[to]
-                try:
-                    in_list.remove(node)
-                    in_list.append(from_)
-                except:
-                    pass
+                in_list.discard(node)
+                in_list.add(from_)
             incoming.pop(node)
             outgoing.pop(node)
             edges = edges.update(inserts)
