@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from difflib import SequenceMatcher
 from enum import Enum
-from typing import Generator, Iterable, Union, cast
+from typing import Any, Generator, Iterable, Union, cast
 
 import attr
 from attr import dataclass
@@ -107,29 +107,46 @@ Edge = tuple[Node, Node]
 NodeDict = defaultdict[Node, list[Node]]
 
 
-def edge_set_to_edge_dict(edges: PSet[Edge]) -> NodeDict:
-    result = defaultdict(list)
+def get_outgoing(edges: PSet[Edge]) -> NodeDict:
+    outgoing = defaultdict(list)
     for from_, to in edges:
-        result[from_].append(to)
-    return result
+        outgoing[from_].append(to)
+    return outgoing
+
+
+def get_incoming(edges: PSet[Edge]) -> NodeDict:
+    incoming = defaultdict(list)
+    for from_, to in edges:
+        incoming[to].append(from_)
+    return incoming
+
+
+def get_incoming_and_outgoing(edges: PSet[Edge]) -> tuple[NodeDict, NodeDict]:
+    outgoing = defaultdict(list)
+    incoming = defaultdict(list)
+    for from_, to in edges:
+        outgoing[from_].append(to)
+        incoming[to].append(from_)
+    return incoming, outgoing
 
 
 def edge_dict_to_node_list(
     edges: NodeDict, nodes: PVector[bool]
 ) -> Generator[int, None, None]:
-    cur = Nodes.start
+    cur: Any = Nodes.start
     while True:
         edge_list = edges.get(cur)
-        if edge_list[0] is Nodes.end:
+        if not edge_list:
+            raise InconsistentError()
+        elif edge_list[0] is Nodes.end:
             break
         elif len(edge_list) > 1:
             __import__("pdb").set_trace()
             raise NotImplementedError()
         else:
-            node: int = edge_list[0]  # type: ignore
-            cur = node
-            if node != Nodes.end and nodes[node]:
-                yield node
+            cur = edge_list[0]
+            if cur != Nodes.end and nodes[cur]:
+                yield cur
 
 
 def node_list_to_edges(
@@ -166,7 +183,7 @@ class State(object):
         return cls(nodes, pset(node_list_to_edges(node_list)), max_node, pvector())
 
     def to_file(self) -> FileRepr:
-        edge_dict = edge_set_to_edge_dict(self.edges)
+        edge_dict = get_outgoing(self.edges)
         node_list = pvector(edge_dict_to_node_list(edge_dict, self.nodes))
         return FileRepr(node_list)
 
