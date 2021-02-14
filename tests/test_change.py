@@ -34,7 +34,6 @@ _x = 0
     changes=[("delete", 0.0, 0.5), ("insert", 0.0, 1)],
 )
 def test_gen_changes(initial, changes):
-    __import__("pdb").set_trace()
     cur = cmod.FileReprEdit.from_size(initial)
     orig = cur
     all_changes = []
@@ -59,7 +58,11 @@ def test_gen_changes(initial, changes):
     state = cmod.State.from_file(orig)
     for change in all_changes:
         state = change.apply(state)
-    assert state.to_file().node_list == cur.node_list
+    try:
+        assert state.to_file().node_list == cur.node_list
+    except cmod.ConflictError:
+        __import__("pdb").set_trace()
+        pass
 
 
 def test_node_to_edge():
