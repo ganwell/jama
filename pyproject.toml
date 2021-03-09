@@ -15,10 +15,11 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.7 <4.0"
-pyrsistent = "^0.17.3"
+pyrsistent = {git = "https://github.com/ganwell/pyrsistent.git", rev = "key_error"}
 attrs = "^20.3.0"
 click = "^7.1.2"
 pygit2 = "^1.5.0"
+retworkx = "^0.8.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

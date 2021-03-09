@@ -351,6 +351,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "numpy"
+version = "1.20.1"
+description = "NumPy is the fundamental package for array computing with Python."
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "packaging"
 version = "20.9"
 description = "Core utilities for Python packages"
@@ -505,6 +513,13 @@ description = "Persistent/Functional/Immutable data structures"
 category = "main"
 optional = false
 python-versions = ">=3.5"
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/ganwell/pyrsistent.git"
+reference = "key_error"
+resolved_reference = "885796fb8b9a14b29c1c7de9ac9d97462907b926"
 
 [[package]]
 name = "pytest"
@@ -583,6 +598,17 @@ description = "Alternative regular expression module, to replace re."
 category = "dev"
 optional = false
 python-versions = "*"
+
+[[package]]
+name = "retworkx"
+version = "0.8.0"
+description = "A python graph library implemented in Rust"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+numpy = ">=1.16.0"
 
 [[package]]
 name = "secretstorage"
@@ -688,7 +714,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7 <4.0"
-content-hash = "5e9088e1c44d85bbf200dd112ff7f9af49c2ada4f3873720c9fac9aa292da5e6"
+content-hash = "fb64636e476c83deac90ce091f342a919cc5324f5f1d1428b6c88123aba93954"
 
 [metadata.files]
 appdirs = [
@@ -863,6 +889,32 @@ mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
     {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
 ]
+numpy = [
+    {file = "numpy-1.20.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:ae61f02b84a0211abb56462a3b6cd1e7ec39d466d3160eb4e1da8bf6717cdbeb"},
+    {file = "numpy-1.20.1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:65410c7f4398a0047eea5cca9b74009ea61178efd78d1be9847fac1d6716ec1e"},
+    {file = "numpy-1.20.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:2d7e27442599104ee08f4faed56bb87c55f8b10a5494ac2ead5c98a4b289e61f"},
+    {file = "numpy-1.20.1-cp37-cp37m-manylinux2010_i686.whl", hash = "sha256:4ed8e96dc146e12c1c5cdd6fb9fd0757f2ba66048bf94c5126b7efebd12d0090"},
+    {file = "numpy-1.20.1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:ecb5b74c702358cdc21268ff4c37f7466357871f53a30e6f84c686952bef16a9"},
+    {file = "numpy-1.20.1-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:b9410c0b6fed4a22554f072a86c361e417f0258838957b78bd063bde2c7f841f"},
+    {file = "numpy-1.20.1-cp37-cp37m-win32.whl", hash = "sha256:3d3087e24e354c18fb35c454026af3ed8997cfd4997765266897c68d724e4845"},
+    {file = "numpy-1.20.1-cp37-cp37m-win_amd64.whl", hash = "sha256:89f937b13b8dd17b0099c7c2e22066883c86ca1575a975f754babc8fbf8d69a9"},
+    {file = "numpy-1.20.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:a1d7995d1023335e67fb070b2fae6f5968f5be3802b15ad6d79d81ecaa014fe0"},
+    {file = "numpy-1.20.1-cp38-cp38-manylinux1_i686.whl", hash = "sha256:60759ab15c94dd0e1ed88241fd4fa3312db4e91d2c8f5a2d4cf3863fad83d65b"},
+    {file = "numpy-1.20.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:125a0e10ddd99a874fd357bfa1b636cd58deb78ba4a30b5ddb09f645c3512e04"},
+    {file = "numpy-1.20.1-cp38-cp38-manylinux2010_i686.whl", hash = "sha256:c26287dfc888cf1e65181f39ea75e11f42ffc4f4529e5bd19add57ad458996e2"},
+    {file = "numpy-1.20.1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:7199109fa46277be503393be9250b983f325880766f847885607d9b13848f257"},
+    {file = "numpy-1.20.1-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:72251e43ac426ff98ea802a931922c79b8d7596480300eb9f1b1e45e0543571e"},
+    {file = "numpy-1.20.1-cp38-cp38-win32.whl", hash = "sha256:c91ec9569facd4757ade0888371eced2ecf49e7982ce5634cc2cf4e7331a4b14"},
+    {file = "numpy-1.20.1-cp38-cp38-win_amd64.whl", hash = "sha256:13adf545732bb23a796914fe5f891a12bd74cf3d2986eed7b7eba2941eea1590"},
+    {file = "numpy-1.20.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:104f5e90b143dbf298361a99ac1af4cf59131218a045ebf4ee5990b83cff5fab"},
+    {file = "numpy-1.20.1-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:89e5336f2bec0c726ac7e7cdae181b325a9c0ee24e604704ed830d241c5e47ff"},
+    {file = "numpy-1.20.1-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:032be656d89bbf786d743fee11d01ef318b0781281241997558fa7950028dd29"},
+    {file = "numpy-1.20.1-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:66b467adfcf628f66ea4ac6430ded0614f5cc06ba530d09571ea404789064adc"},
+    {file = "numpy-1.20.1-cp39-cp39-win32.whl", hash = "sha256:12e4ba5c6420917571f1a5becc9338abbde71dd811ce40b37ba62dec7b39af6d"},
+    {file = "numpy-1.20.1-cp39-cp39-win_amd64.whl", hash = "sha256:9c94cab5054bad82a70b2e77741271790304651d584e2cdfe2041488e753863b"},
+    {file = "numpy-1.20.1-pp37-pypy37_pp73-manylinux2010_x86_64.whl", hash = "sha256:9eb551d122fadca7774b97db8a112b77231dcccda8e91a5bc99e79890797175e"},
+    {file = "numpy-1.20.1.zip", hash = "sha256:3bc63486a870294683980d76ec1e3efc786295ae00128f9ea38e2c6e74d5a60a"},
+]
 packaging = [
     {file = "packaging-20.9-py2.py3-none-any.whl", hash = "sha256:67714da7f7bc052e064859c05c595155bd1ee9f69f76557e21f051443c20947a"},
     {file = "packaging-20.9.tar.gz", hash = "sha256:5b327ac1320dc863dca72f4514ecc086f31186744b84a230374cc1fd776feae5"},
@@ -937,9 +989,7 @@ pyreadline = [
 pyrepl = [
     {file = "pyrepl-0.9.0.tar.gz", hash = "sha256:292570f34b5502e871bbb966d639474f2b57fbfcd3373c2d6a2f3d56e681a775"},
 ]
-pyrsistent = [
-    {file = "pyrsistent-0.17.3.tar.gz", hash = "sha256:2e636185d9eb976a18a8a8e96efce62f2905fea90041958d8cc2a189756ebf3e"},
-]
+pyrsistent = []
 pytest = [
     {file = "pytest-6.2.2-py3-none-any.whl", hash = "sha256:b574b57423e818210672e07ca1fa90aaf194a4f63f3ab909a2c67ebb22913839"},
     {file = "pytest-6.2.2.tar.gz", hash = "sha256:9d1edf9e7d0b84d72ea3dbcdfd22b35fb543a5e8f2a60092dd578936bf63d7f9"},
@@ -998,6 +1048,50 @@ regex = [
     {file = "regex-2020.11.13-cp39-cp39-win32.whl", hash = "sha256:f8f295db00ef5f8bae530fc39af0b40486ca6068733fb860b42115052206466f"},
     {file = "regex-2020.11.13-cp39-cp39-win_amd64.whl", hash = "sha256:a15f64ae3a027b64496a71ab1f722355e570c3fac5ba2801cafce846bf5af01d"},
     {file = "regex-2020.11.13.tar.gz", hash = "sha256:83d6b356e116ca119db8e7c6fc2983289d87b27b3fac238cfe5dca529d884562"},
+]
+retworkx = [
+    {file = "retworkx-0.8.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:ecc08f8bacdb9e257aa063708cbb88e332fe34babb746f020fbb9316f2ec627a"},
+    {file = "retworkx-0.8.0-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:27cf2f9f70ce7fb586857fdb804ddb00971eb40e6c75dbbe9ffe7e694bc0ab82"},
+    {file = "retworkx-0.8.0-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:441c0e1e6a812ee06eeea435dff304e58cf21443cca8803835a9ef6be136bd77"},
+    {file = "retworkx-0.8.0-cp36-cp36m-manylinux2010_i686.whl", hash = "sha256:b3398046457665529485b78f3070ccb426ef05ef5743640c3bd927306508489f"},
+    {file = "retworkx-0.8.0-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:ddd05fecdea03d5b9b8d9bb283c3411b4a81b6e7c214ccc77603d9bb5c6bdb81"},
+    {file = "retworkx-0.8.0-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:2164fafb06dad4644dc75390219f7b3cb3b26eaa65ab9f8b40d466125bcb6f13"},
+    {file = "retworkx-0.8.0-cp36-cp36m-manylinux2014_ppc64le.whl", hash = "sha256:4495abca4875f3d2e002127284378646d97a861eec0f69a002ac669c04fcfb93"},
+    {file = "retworkx-0.8.0-cp36-cp36m-manylinux2014_s390x.whl", hash = "sha256:182f22bf36130546b2699379e000abc98929d13211930d497baa228dfec0643c"},
+    {file = "retworkx-0.8.0-cp36-cp36m-win32.whl", hash = "sha256:a832923e4e62e7cecfcc779cd70ad7a154e81d04fec4e59b2ef73b25caead730"},
+    {file = "retworkx-0.8.0-cp36-cp36m-win_amd64.whl", hash = "sha256:c122d61b0fc372b717fecf1d6b083026d85a50585a2596f06249149d93dcff56"},
+    {file = "retworkx-0.8.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:4b0bb0124987a16536608c541aa25714d80438794a0ccc41fbf55f065dc9ca66"},
+    {file = "retworkx-0.8.0-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:09ba2ef6b0b680d53095589396bcbd3091bda47795de7caeba68edc076a03c53"},
+    {file = "retworkx-0.8.0-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:5998ab6b719ab84a7873bdf7f898a2f2b599aaac889018b3a61c8b36255fb9d8"},
+    {file = "retworkx-0.8.0-cp37-cp37m-manylinux2010_i686.whl", hash = "sha256:afcf0084d5eea49abf5fe1b83100c7c999f6ae2c59973ebe663d07b7eaeece36"},
+    {file = "retworkx-0.8.0-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:6bfaa6019560025a1f2375cdfd9eabf4ecc2cfbfbeadf32174ac138f8264e3a1"},
+    {file = "retworkx-0.8.0-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:8d9ee0da1fdd56e0f4a160cbb78e3566831e1ea7273ca4962c989a1a384a23e5"},
+    {file = "retworkx-0.8.0-cp37-cp37m-manylinux2014_ppc64le.whl", hash = "sha256:183fb399186c61c9c07659b3479102aa44c6e2991cf8b8f94118ecd7d1d6818a"},
+    {file = "retworkx-0.8.0-cp37-cp37m-manylinux2014_s390x.whl", hash = "sha256:40a1295782c5ed4391b220de40e601634eb67e1c1f47944da4d0d9873a2e5b12"},
+    {file = "retworkx-0.8.0-cp37-cp37m-win32.whl", hash = "sha256:90fc90d534d69b44fdb7087dc0ce5db56b63c95429107468358d213469eda86d"},
+    {file = "retworkx-0.8.0-cp37-cp37m-win_amd64.whl", hash = "sha256:bdbe3dc35c9b73ecb2d1a9437af8618d7da922cb8451aa2062fb23e4912b003b"},
+    {file = "retworkx-0.8.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:0a0f144ac7e6fab55ec11e558618149460cdd7bd9a9e5173f762a5e97c08e49c"},
+    {file = "retworkx-0.8.0-cp38-cp38-manylinux1_i686.whl", hash = "sha256:2d996787e80ff4ffe1fc541b4427d1ece02b20cc926e50ba57b7952b12a66ca2"},
+    {file = "retworkx-0.8.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:ede6232ad466cd792359390aad9e19e25f8fac75c87085ddf106c2034f11034f"},
+    {file = "retworkx-0.8.0-cp38-cp38-manylinux2010_i686.whl", hash = "sha256:cd0c25945a2ae491093789e0ff56b6c76d321f3af15fd4aded39e450bd95d2bb"},
+    {file = "retworkx-0.8.0-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:19e1eb3bd7f2133525554ade95ad1cfef65f72978f1b32a44e60ba84d68acead"},
+    {file = "retworkx-0.8.0-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:e8b145c9aebaebc82e1b6246884868b489521708374946f8bf7d982373faa421"},
+    {file = "retworkx-0.8.0-cp38-cp38-manylinux2014_ppc64le.whl", hash = "sha256:8975f15533a1b804ab6e37454c74ccab5c3f71cc010d7f96eb1062df31979c39"},
+    {file = "retworkx-0.8.0-cp38-cp38-manylinux2014_s390x.whl", hash = "sha256:1a1d9f34a83cc52ba16262bf65a2dab5a5614020266dcf3829ce6ab010a7e40b"},
+    {file = "retworkx-0.8.0-cp38-cp38-win32.whl", hash = "sha256:22a85079902130f721d05905b36147ccd279c10b3dd1dba7b7225e0ffa8571a6"},
+    {file = "retworkx-0.8.0-cp38-cp38-win_amd64.whl", hash = "sha256:fd522a2358cb92d6c61c5090b1980897e93632a739b85619fbf6d4f4f777feec"},
+    {file = "retworkx-0.8.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:b97136b464040f60f7f672909a1963df1b54fc1ca9bc9f693bd555bb2c810715"},
+    {file = "retworkx-0.8.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:4eb90bb8c1b82798e115ef15289f81cf899cb5b5d21f45785d18fc82282e0837"},
+    {file = "retworkx-0.8.0-cp39-cp39-manylinux1_i686.whl", hash = "sha256:e367a86b43b0d599773cb54edde1697f6f3f5478ea6f10fada68e17c2b2ea5a1"},
+    {file = "retworkx-0.8.0-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:2f906c0045c7fa311be98631d5dfb6888c31ca31b34077bdeb8795d7b4f03144"},
+    {file = "retworkx-0.8.0-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:5b15579b8377c0329e2015b4ccf42964142e1e6a277ae50e66c522632304e293"},
+    {file = "retworkx-0.8.0-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:22b70feda776e87da13ee688db29e93cec13708a9f4259c6fdd033f191169871"},
+    {file = "retworkx-0.8.0-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:03a40307a2c0f142edbd0f2ec99457641776408dfa7bb3f7ea2c012f5fbb3f34"},
+    {file = "retworkx-0.8.0-cp39-cp39-manylinux2014_ppc64le.whl", hash = "sha256:e5fa7986bbdb40106a966fea0478b37215c177cfa00ebe250a6f4d86e82cae32"},
+    {file = "retworkx-0.8.0-cp39-cp39-manylinux2014_s390x.whl", hash = "sha256:05799619267edb8ba4bebed7743c5c068b9b6ca3bff2b308f7ddbda50fec152d"},
+    {file = "retworkx-0.8.0-cp39-cp39-win32.whl", hash = "sha256:cb206ca3be095677b2eb2ecaf3a0940db1dd2b849ab9f75ffe4585a3978f8526"},
+    {file = "retworkx-0.8.0-cp39-cp39-win_amd64.whl", hash = "sha256:06d0da10b86fd38b4312e311730420fdda008ae3fee6823081248f887475261e"},
+    {file = "retworkx-0.8.0.tar.gz", hash = "sha256:84994fc1b1cffdf326192bf36122039c026b417047082a2be4c49f1e69390517"},
 ]
 secretstorage = [
     {file = "SecretStorage-3.3.1-py3-none-any.whl", hash = "sha256:422d82c36172d88d6a0ed5afdec956514b189ddbfb72fefab0c8a1cee4eaf71f"},
