@@ -38,7 +38,7 @@ class FileRepr(object):
     def from_user_repr(cls, node_list):
         return cls([x + UserFileNodes.content for x in node_list])
 
-    def to_user_repr(self):
+    def to_user(self):
         return self.node_list.transform([ny], lambda x: x - UserFileNodes.content)
 
 
@@ -95,13 +95,15 @@ class State(object):
     @staticmethod
     def _node_list_to_edges(
         nodes: Iterable[int],
+        start: int = FileNodes.start,
+        end: int = FileNodes.end,
     ) -> Iterable[Edge]:
         content = UserFileNodes.content
-        prev: int = FileNodes.start
+        prev = start
         for node in nodes:
             yield (prev, node)
             prev = node
-        yield (prev, FileNodes.end)
+        yield (prev, end)
 
     @classmethod
     def from_graph(cls, nodes: Iterable[bool], edges: Iterable[Edge]):
@@ -134,6 +136,38 @@ class State(object):
 
     def to_user_nodes(self) -> Iterable[bool]:
         return self.nodes[: UserFileNodes.content]
+
+    def delete(self, change: Delete) -> State:
+        return State(
+            self.nodes.set(change.line, False),
+            self.edges,
+            self.max_node,
+            self.history.append(change),
+        )
+
+    def insert(self, change: Insert) -> State:
+        nodes = self.nodes
+        lines = change.lines
+        assert min(lines) > self.max_node
+        max_node = max(lines)
+        nodes = nodes.extend([False] * (max_node - self.max_node))
+        assert max_node <= len(nodes)
+        for line in lines:
+            nodes = nodes.set(line, True)
+        inserts = list(
+            self._node_list_to_edges(
+                lines,
+                change.predecessor,
+                change.successor,
+            )
+        )
+        edges = self.edges
+        try:
+            edges = edges.remove((change.predecessor, change.successor))
+        except KeyError:
+            pass
+        edges = edges.update(inserts)
+        return State(nodes, edges, max_node, self.history.append(change))
 
 
 @dataclass(slots=True, frozen=True)
@@ -227,8 +261,15 @@ class Delete(Change):
     line: int
 
     def __attrs_post_init__(self):
-        assert self.line != UserFileNodes.end
-        assert self.line != UserFileNodes.start
+        assert self.line != FileNodes.end
+        assert self.line != FileNodes.start
+
+    @classmethod
+    def from_user(cls, line):
+        return cls(line + UserFileNodes.content)
+
+    def to_user(self):
+        return self.line - UserFileNodes.content
 
     # def apply(self, state: State) -> State:
     #     return state.delete(self)
