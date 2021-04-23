@@ -35,7 +35,7 @@ class FileRepr(object):
     node_list = cast(PVector[int], attr.ib(converter=pvector))
 
     @classmethod
-    def from_user_repr(cls, node_list):
+    def from_user(cls, node_list):
         return cls([x + UserFileNodes.content for x in node_list])
 
     def to_user(self):
@@ -48,11 +48,11 @@ class FileReprEdit(FileRepr):
 
     @classmethod
     def from_size(cls, size):
-        frepr = FileReprEdit.from_user_repr(pvector(range(size)))
+        frepr = FileReprEdit.from_user(pvector(range(size)))
         return cls(frepr.node_list, size + UserFileNodes.content - 1)
 
     @classmethod
-    def from_user_repr(cls, node_list):
+    def from_user(cls, node_list):
         max_uid = 0
         node_new = []
         for x in node_list:
@@ -252,8 +252,8 @@ class Insert(Change):
         assert self.successor != UserFileNodes.start
         assert self.predecessor != self.successor
 
-    # def apply(self, state: State) -> State:
-    #     return state.insert(self)
+    def apply(self, state: State) -> State:
+        return state.insert(self)
 
 
 @dataclass(slots=True, frozen=True)
@@ -271,5 +271,5 @@ class Delete(Change):
     def to_user(self):
         return self.line - UserFileNodes.content
 
-    # def apply(self, state: State) -> State:
-    #     return state.delete(self)
+    def apply(self, state: State) -> State:
+        return state.delete(self)

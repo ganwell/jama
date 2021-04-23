@@ -4,22 +4,22 @@ import jama.change as cmod
 
 
 def test_file_repr():
-    file_ = cmod.FileRepr.from_user_repr([0])
+    file_ = cmod.FileRepr.from_user([0])
     assert file_.node_list == [cmod.UserFileNodes.content]
     assert file_.to_user() == [0]
-    file_ = cmod.FileRepr.from_user_repr([0, 1])
+    file_ = cmod.FileRepr.from_user([0, 1])
     assert file_.node_list == [
         cmod.UserFileNodes.content,
         cmod.UserFileNodes.content + 1,
     ]
     assert file_.to_user() == [0, 1]
-    file_ = cmod.FileRepr.from_user_repr([1])
+    file_ = cmod.FileRepr.from_user([1])
     assert file_.node_list == [cmod.UserFileNodes.content + 1]
     assert file_.to_user() == [1]
 
 
 def test_file_repr_edit():
-    file_ = cmod.FileReprEdit.from_user_repr([0])
+    file_ = cmod.FileReprEdit.from_user([0])
     assert file_.node_list == [cmod.UserFileNodes.content]
     assert file_.max_uid == cmod.UserFileNodes.content
     assert file_.max_uid == file_.node_list[0]
@@ -134,3 +134,28 @@ def test_diff_del():
     assert b.to_user() == [0]
     c = list(cmod.Change.from_diff(a, b))
     assert c == [cmod.Delete.from_user(1), cmod.Delete.from_user(2)]
+
+
+def test_diff_repl():
+    ifu = cmod.Insert.from_user
+    dfu = cmod.Delete.from_user
+    a = cmod.FileRepr.from_user([0, 1, 2])
+    b = cmod.FileRepr.from_user([0, 3, 2])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [dfu(1), ifu(0, [3], 2)]
+    a = cmod.FileRepr.from_user([0, 1, 2])
+    b = cmod.FileRepr.from_user([0, 1, 3])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [dfu(2), ifu(1, [3], cmod.UserFileNodes.end)]
+    a = cmod.FileRepr.from_user([0, 1, 2])
+    b = cmod.FileRepr.from_user([3, 1, 2])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [dfu(0), ifu(cmod.UserFileNodes.start, [3], 1)]
+    a = cmod.FileRepr.from_user([0, 1, 2])
+    b = cmod.FileRepr.from_user([0, 3, 4, 2])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [dfu(1), ifu(0, [3, 4], 2)]
+    a = cmod.FileRepr.from_user([0, 1, 2])
+    b = cmod.FileRepr.from_user([0, 3])
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [dfu(1), dfu(2), ifu(0, [3], cmod.UserFileNodes.end)]
