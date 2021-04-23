@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from difflib import SequenceMatcher
 from enum import IntEnum
 from typing import Any, Generator, Iterable, Union, cast
 
@@ -10,6 +11,10 @@ from pyrsistent.typing import PSet, PVector
 from retworkx import PyDAG  # type: ignore
 
 Edge = tuple[int, int]
+
+
+def get_diff(a, b):
+    return SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes()
 
 
 class FileNodes(IntEnum):
@@ -125,24 +130,87 @@ class State(object):
     def to_user_nodes(self) -> Iterable[bool]:
         return self.nodes[: FileNodes.content]
 
-    # def to_file(self) -> FileRepr:
-    #     edges = collect_deleted_nodes(self.edges, self.nodes)
-    #     edges = get_outgoing(edges)
-    #     node_list = edges_to_node_list(edges)
-    #     return FileRepr(pvector(node_list))
-
-    # def has_conflict(self) -> bool:
-    #     raise NotImplementedError()
-
-    # def delete(self, change: Delete) -> State:
-    #     return State(
-    #         self.nodes.set(change.line, False),
-    #         self.edges,
-    #         self.max_node,
-    #         self.history.append(change),
-    #     )
-
 
 @dataclass(slots=True, frozen=True)
 class Change(object):
-    pass
+    def apply(self, state: State) -> State:
+        raise NotImplementedError()
+
+    @classmethod
+    def pre_suc(_, ag, left, right):
+        pre = FileNodes.start
+        suc = FileNodes.end
+        if left:
+            pre = ag[left - 1]
+        if right != len(ag):
+            suc = ag[right]
+        return pre, suc
+
+    @classmethod
+    def from_diff(cls, a: FileRepr, b: FileRepr):
+        a_node_list = a.node_list
+        b_node_list = b.node_list
+        for (
+            ct,
+            a_left,
+            a_right,
+            b_left,
+            b_right,
+        ) in get_diff(a_node_list, b_node_list):
+            if ct == "insert":
+                pre, suc = cls.pre_suc(
+                    a_node_list,
+                    a_left,
+                    a_left,
+                )
+                yield Insert(
+                    pre,
+                    b_node_list[b_left:b_right],
+                    suc,
+                )
+            elif ct == "delete":
+                for line in a_node_list[a_left:a_right]:
+                    yield Delete(line)
+            elif ct == "replace":
+                for line in a_node_list[a_left:a_right]:
+                    yield Delete(line)
+                pre, suc = cls.pre_suc(
+                    a_node_list,
+                    a_left,
+                    a_right,
+                )
+                yield Insert(
+                    pre,
+                    b_node_list[b_left:b_right],
+                    suc,
+                )
+
+
+@dataclass(slots=True, frozen=True)
+class Insert(Change):
+    predecessor: int
+    lines: PVector[int]
+    successor: int
+
+    lines = cast(PVector[int], attr.ib(converter=pvector))
+
+    def __attrs_post_init__(self):
+        assert len(self.lines) > 0
+        assert self.predecessor != FileNodes.end
+        assert self.successor != FileNodes.start
+        assert self.predecessor != self.successor
+
+    # def apply(self, state: State) -> State:
+    #     return state.insert(self)
+
+
+@dataclass(slots=True, frozen=True)
+class Delete(Change):
+    line: int
+
+    def __attrs_post_init__(self):
+        assert self.line != FileNodes.end
+        assert self.line != FileNodes.start
+
+    # def apply(self, state: State) -> State:
+    #     return state.delete(self)
