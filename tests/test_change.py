@@ -5,31 +5,31 @@ import jama.change as cmod
 
 def test_file_repr():
     file_ = cmod.FileRepr.from_user([0])
-    assert file_.node_list == [cmod.UserFileNodes.content]
+    assert file_.node_list == [cmod.FileNodes.content]
     assert file_.to_user() == [0]
     file_ = cmod.FileRepr.from_user([0, 1])
     assert file_.node_list == [
-        cmod.UserFileNodes.content,
-        cmod.UserFileNodes.content + 1,
+        cmod.FileNodes.content,
+        cmod.FileNodes.content + 1,
     ]
     assert file_.to_user() == [0, 1]
     file_ = cmod.FileRepr.from_user([1])
-    assert file_.node_list == [cmod.UserFileNodes.content + 1]
+    assert file_.node_list == [cmod.FileNodes.content + 1]
     assert file_.to_user() == [1]
 
 
 def test_file_repr_edit():
     file_ = cmod.FileReprEdit.from_user([0])
-    assert file_.node_list == [cmod.UserFileNodes.content]
-    assert file_.max_uid == cmod.UserFileNodes.content
+    assert file_.node_list == [cmod.FileNodes.content]
+    assert file_.max_uid == cmod.FileNodes.content
     assert file_.max_uid == file_.node_list[0]
     file_ = cmod.FileReprEdit.from_size(2)
     assert file_.max_uid == file_.node_list[1]
-    assert file_.max_uid == cmod.UserFileNodes.content + 1
+    assert file_.max_uid == cmod.FileNodes.content + 1
 
 
 def test_state_from_file():
-    fn = cmod.UserFileNodes
+    fn = cmod.FileNodes
     cn = fn.content
     a = cmod.FileReprEdit.from_size(2)
     b = cmod.State.from_file(a)
@@ -96,7 +96,7 @@ def test_del():
 
 
 def test_diff_add():
-    fn = cmod.UserFileNodes
+    fn = cmod.FileNodes
     a = cmod.FileReprEdit.from_size(3)
     b = a.insert(0, 1)
     assert b.to_user() == [3, 0, 1, 2]
@@ -146,11 +146,11 @@ def test_diff_repl():
     a = cmod.FileRepr.from_user([0, 1, 2])
     b = cmod.FileRepr.from_user([0, 1, 3])
     c = list(cmod.Change.from_diff(a, b))
-    assert c == [dfu(2), ifu(1, [3], cmod.UserFileNodes.end)]
+    assert c == [dfu(2), ifu(1, [3], cmod.FileNodes.end)]
     a = cmod.FileRepr.from_user([0, 1, 2])
     b = cmod.FileRepr.from_user([3, 1, 2])
     c = list(cmod.Change.from_diff(a, b))
-    assert c == [dfu(0), ifu(cmod.UserFileNodes.start, [3], 1)]
+    assert c == [dfu(0), ifu(cmod.FileNodes.start, [3], 1)]
     a = cmod.FileRepr.from_user([0, 1, 2])
     b = cmod.FileRepr.from_user([0, 3, 4, 2])
     c = list(cmod.Change.from_diff(a, b))
@@ -158,4 +158,31 @@ def test_diff_repl():
     a = cmod.FileRepr.from_user([0, 1, 2])
     b = cmod.FileRepr.from_user([0, 3])
     c = list(cmod.Change.from_diff(a, b))
-    assert c == [dfu(1), dfu(2), ifu(0, [3], cmod.UserFileNodes.end)]
+    assert c == [dfu(1), dfu(2), ifu(0, [3], cmod.FileNodes.end)]
+
+
+def test_complex_del():
+    a = cmod.FileRepr.from_user([0, 1, 2])
+    b = cmod.State.from_file(a)
+    c = cmod.Insert.from_user(cmod.FileNodes.start, [3], 2)
+    d = c.apply(b)
+    assert d.to_user_nodes() == [True, True, True, True]
+    assert set(d.to_user_edges()) == {
+        (cmod.FileNodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (cmod.FileNodes.start, 3),
+        (3, 2),
+        (2, cmod.FileNodes.end),
+    }
+    # e = cmod.Delete(0)
+    # f = e.apply(d)
+    # assert f.nodes == [False, True, True, True]
+    # assert f.edges == {
+    #     (Nodes.start, 0),
+    #     (0, 1),
+    #     (1, 2),
+    #     (Nodes.start, 3),
+    #     (3, 2),
+    #     (2, Nodes.end),
+    # }
