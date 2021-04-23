@@ -18,9 +18,14 @@ def get_diff(a, b):
 
 
 class UserFileNodes(IntEnum):
-    end = -1
     start = -2
+    end = -1
     content = 2
+
+
+class FileNodes(IntEnum):
+    start = 0
+    end = 1
 
 
 @dataclass(slots=True, frozen=True)
@@ -92,11 +97,11 @@ class State(object):
         nodes: Iterable[int],
     ) -> Iterable[Edge]:
         content = UserFileNodes.content
-        prev = UserFileNodes.start + content
+        prev: int = FileNodes.start
         for node in nodes:
             yield (prev, node)
             prev = node
-        yield (prev, UserFileNodes.end + content)
+        yield (prev, FileNodes.end)
 
     @classmethod
     def from_graph(cls, nodes: Iterable[bool], edges: Iterable[Edge]):
@@ -138,9 +143,8 @@ class Change(object):
 
     @classmethod
     def pre_suc(_, ag, left, right):
-        cn = UserFileNodes.content
-        pre = UserFileNodes.start + cn
-        suc = UserFileNodes.end + cn
+        pre = FileNodes.start
+        suc = FileNodes.end
         if left:
             pre = ag[left - 1]
         if right != len(ag):
