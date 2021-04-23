@@ -175,14 +175,14 @@ def test_complex_del():
         (3, 2),
         (2, cmod.FileNodes.end),
     }
-    # e = cmod.Delete(0)
-    # f = e.apply(d)
-    # assert f.nodes == [False, True, True, True]
-    # assert f.edges == {
-    #     (Nodes.start, 0),
-    #     (0, 1),
-    #     (1, 2),
-    #     (Nodes.start, 3),
-    #     (3, 2),
-    #     (2, Nodes.end),
-    # }
+    e = cmod.Delete.from_user(0)
+    f = e.apply(d)
+    assert f.to_user_nodes() == [False, True, True, True]
+    assert set(f.to_user_edges()) == {
+        (cmod.FileNodes.start, 0),
+        (0, 1),
+        (1, 2),
+        (cmod.FileNodes.start, 3),
+        (3, 2),
+        (2, cmod.FileNodes.end),
+    }
