@@ -138,8 +138,9 @@ class Change(object):
 
     @classmethod
     def pre_suc(_, ag, left, right):
-        pre = FileNodes.start
-        suc = FileNodes.end
+        cn = FileNodes.content
+        pre = FileNodes.start + cn
+        suc = FileNodes.end + cn
         if left:
             pre = ag[left - 1]
         if right != len(ag):
@@ -193,6 +194,19 @@ class Insert(Change):
     successor: int
 
     lines = cast(PVector[int], attr.ib(converter=pvector))
+
+    @classmethod
+    def from_user(cls, predecessor, lines, successor):
+        cn = FileNodes.content
+        return cls(predecessor + cn, [x + cn for x in lines], successor + cn)
+
+    def to_user(self):
+        cn = FileNodes.content
+        return (
+            self.predecessor - cn,
+            [x - cn for x in self.lines],
+            self.successor - cn,
+        )
 
     def __attrs_post_init__(self):
         assert len(self.lines) > 0

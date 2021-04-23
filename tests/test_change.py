@@ -27,15 +27,15 @@ def test_file_repr_edit():
 
 def test_state_from_file():
     fn = cmod.FileNodes
-    ct = fn.content
+    cn = fn.content
     a = cmod.FileReprEdit.from_size(2)
     b = cmod.State.from_file(a)
     assert b.nodes == [True, True, True, True]
     assert b.to_user_nodes() == [True, True]
     assert b.edges == {
-        (fn.start + ct, 0 + ct),
-        (0 + ct, 1 + ct),
-        (1 + ct, fn.end + ct),
+        (fn.start + cn, 0 + cn),
+        (0 + cn, 1 + cn),
+        (1 + cn, fn.end + cn),
     }
     assert set(b.to_user_edges()) == {
         (fn.start, 0),
@@ -98,17 +98,18 @@ def test_diff_add():
     b = a.insert(0, 1)
     assert b.to_user_repr() == [3, 0, 1, 2]
     assert len(b) == 4
-    # c = list(cmod.Change.from_diff(a, b))
-    # assert c == [cmod.Insert(fn.start, [3], 0)]
-    # b = a.insert(1, 1)
-    # assert b.to_user_repr() == [0, 3, 1, 2]
-    # c = list(cmod.Change.from_diff(a, b))
-    # assert c == [cmod.Insert(0, [3], 1)]
-    # b = a.insert(2, 2)
-    # assert b.to_user_repr() == [0, 1, 3, 4, 2]
-    # c = list(cmod.Change.from_diff(a, b))
-    # assert c == [cmod.Insert(1, [3, 4], 2)]
-    # b = a.insert(3, 2)
-    # assert b.to_user_repr() == [0, 1, 2, 3, 4]
-    # c = list(cmod.Change.from_diff(a, b))
-    # assert c == [cmod.Insert(2, [3, 4], fn.end)]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert.from_user(fn.start, [3], 0)]
+    assert c[0].to_user() == (fn.start, [3], 0)
+    b = a.insert(1, 1)
+    assert b.to_user_repr() == [0, 3, 1, 2]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert.from_user(0, [3], 1)]
+    b = a.insert(2, 2)
+    assert b.to_user_repr() == [0, 1, 3, 4, 2]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert.from_user(1, [3, 4], 2)]
+    b = a.insert(3, 2)
+    assert b.to_user_repr() == [0, 1, 2, 3, 4]
+    c = list(cmod.Change.from_diff(a, b))
+    assert c == [cmod.Insert.from_user(2, [3, 4], fn.end)]
