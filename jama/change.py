@@ -17,7 +17,7 @@ def get_diff(a, b):
     return SequenceMatcher(a=a, b=b, autojunk=False).get_opcodes()
 
 
-class FileNodes(IntEnum):
+class UserFileNodes(IntEnum):
     end = -1
     start = -2
     content = 2
@@ -31,10 +31,10 @@ class FileRepr(object):
 
     @classmethod
     def from_user_repr(cls, node_list):
-        return cls([x + FileNodes.content for x in node_list])
+        return cls([x + UserFileNodes.content for x in node_list])
 
     def to_user_repr(self):
-        return self.node_list.transform([ny], lambda x: x - FileNodes.content)
+        return self.node_list.transform([ny], lambda x: x - UserFileNodes.content)
 
 
 @dataclass(slots=True, frozen=True)
@@ -44,14 +44,14 @@ class FileReprEdit(FileRepr):
     @classmethod
     def from_size(cls, size):
         frepr = FileReprEdit.from_user_repr(pvector(range(size)))
-        return cls(frepr.node_list, size + FileNodes.content - 1)
+        return cls(frepr.node_list, size + UserFileNodes.content - 1)
 
     @classmethod
     def from_user_repr(cls, node_list):
         max_uid = 0
         node_new = []
         for x in node_list:
-            x += FileNodes.content
+            x += UserFileNodes.content
             max_uid = max(max_uid, x)
             node_new.append(x)
         return cls(node_new, max_uid)
@@ -91,12 +91,12 @@ class State(object):
     def _node_list_to_edges(
         nodes: Iterable[int],
     ) -> Iterable[Edge]:
-        content = FileNodes.content
-        prev = FileNodes.start + content
+        content = UserFileNodes.content
+        prev = UserFileNodes.start + content
         for node in nodes:
             yield (prev, node)
             prev = node
-        yield (prev, FileNodes.end + content)
+        yield (prev, UserFileNodes.end + content)
 
     @classmethod
     def from_graph(cls, nodes: Iterable[bool], edges: Iterable[Edge]):
@@ -114,7 +114,7 @@ class State(object):
         else:
             nodes = pvector()
 
-        for i in range(FileNodes.content):
+        for i in range(UserFileNodes.content):
             nodes = nodes.set(i, True)
         for i in node_list:
             nodes = nodes.set(i, True)
@@ -123,12 +123,12 @@ class State(object):
         )
 
     def to_user_edges(self) -> Iterable[Edge]:
-        c = FileNodes.content
+        c = UserFileNodes.content
         for e in self.edges:
             yield (e[0] - c, e[1] - c)
 
     def to_user_nodes(self) -> Iterable[bool]:
-        return self.nodes[: FileNodes.content]
+        return self.nodes[: UserFileNodes.content]
 
 
 @dataclass(slots=True, frozen=True)
@@ -138,9 +138,9 @@ class Change(object):
 
     @classmethod
     def pre_suc(_, ag, left, right):
-        cn = FileNodes.content
-        pre = FileNodes.start + cn
-        suc = FileNodes.end + cn
+        cn = UserFileNodes.content
+        pre = UserFileNodes.start + cn
+        suc = UserFileNodes.end + cn
         if left:
             pre = ag[left - 1]
         if right != len(ag):
@@ -197,11 +197,11 @@ class Insert(Change):
 
     @classmethod
     def from_user(cls, predecessor, lines, successor):
-        cn = FileNodes.content
+        cn = UserFileNodes.content
         return cls(predecessor + cn, [x + cn for x in lines], successor + cn)
 
     def to_user(self):
-        cn = FileNodes.content
+        cn = UserFileNodes.content
         return (
             self.predecessor - cn,
             [x - cn for x in self.lines],
@@ -210,8 +210,8 @@ class Insert(Change):
 
     def __attrs_post_init__(self):
         assert len(self.lines) > 0
-        assert self.predecessor != FileNodes.end
-        assert self.successor != FileNodes.start
+        assert self.predecessor != UserFileNodes.end
+        assert self.successor != UserFileNodes.start
         assert self.predecessor != self.successor
 
     # def apply(self, state: State) -> State:
@@ -223,8 +223,8 @@ class Delete(Change):
     line: int
 
     def __attrs_post_init__(self):
-        assert self.line != FileNodes.end
-        assert self.line != FileNodes.start
+        assert self.line != UserFileNodes.end
+        assert self.line != UserFileNodes.start
 
     # def apply(self, state: State) -> State:
     #     return state.delete(self)
